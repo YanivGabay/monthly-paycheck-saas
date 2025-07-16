@@ -1,0 +1,24 @@
+# Modern docker-compose (no version needed)
+
+services:
+  test:
+    build:
+      context: .
+      dockerfile: Dockerfile.test
+    volumes:
+      - .:/app
+    environment:
+      - PYTHONPATH=/app
+    working_dir: /app
+
+  # Main app for testing after validation
+  app:
+    build: .
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./uploads:/app/uploads
+    environment:
+      - PYTHONPATH=/app
+    profiles:
+      - app 

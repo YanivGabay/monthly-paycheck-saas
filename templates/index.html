@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+
+{% block title %}העלאת תלושי שכר - Monthly Paycheck SaaS{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto">
+    <!-- Hero Section -->
+    <div class="text-center mb-12">
+        <h2 class="text-4xl font-bold text-gray-800 mb-4">העלאת תלושי שכר</h2>
+        <p class="text-xl text-gray-600 mb-8">
+            העלה קובץ PDF עם תלושי שכר והמערכת תזהה אוטומטית את השמות העבריים
+        </p>
+    </div>
+
+    <!-- Upload Form -->
+    <div class="bg-white rounded-lg shadow-lg p-8 mb-8">
+        <form 
+            hx-post="/upload" 
+            hx-target="#results-container" 
+            hx-encoding="multipart/form-data"
+            hx-indicator="#upload-indicator"
+            class="space-y-6"
+        >
+            <!-- File Input -->
+            <div class="space-y-2">
+                <label for="file" class="block text-lg font-medium text-gray-700">
+                    בחר קובץ PDF
+                </label>
+                <div class="relative">
+                    <input 
+                        type="file" 
+                        name="file" 
+                        id="file" 
+                        accept=".pdf"
+                        required
+                        class="block w-full text-lg text-gray-500 file:mr-4 file:py-3 file:px-6 file:rounded-lg file:border-0 file:text-lg file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 border-2 border-dashed border-gray-300 rounded-lg p-6"
+                    >
+                </div>
+                <p class="text-sm text-gray-500">
+                    קבצי PDF בלבד. גודל מקסימלי: 10MB
+                </p>
+            </div>
+
+            <!-- Upload Button -->
+            <div class="text-center">
+                <button 
+                    type="submit" 
+                    class="upload-button bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 px-8 rounded-lg text-lg transition-colors inline-flex items-center"
+                >
+                    <svg class="w-6 h-6 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
+                    </svg>
+                    עבד על הקובץ
+                </button>
+                
+                <!-- Loading Indicator -->
+                <div id="upload-indicator" class="upload-progress">
+                    <div class="inline-flex items-center text-blue-600">
+                        <svg class="animate-spin h-6 w-6 ml-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        <span class="text-lg font-medium">מעבד את הקובץ...</span>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <!-- Results Container -->
+    <div id="results-container">
+        <!-- Results will be loaded here via htmx -->
+    </div>
+
+    <!-- Instructions -->
+    <div class="bg-blue-50 border border-blue-200 rounded-lg p-6">
+        <h3 class="text-lg font-semibold text-blue-800 mb-3">איך זה עובד?</h3>
+        <div class="text-blue-700 space-y-2">
+            <p>1. העלה קובץ PDF המכיל תלושי שכר עם שמות עבריים</p>
+            <p>2. המערכת תפצל את הקובץ לעמודים נפרדים</p>
+            <p>3. כל עמוד יעבור זיהוי טקסט עברי אוטומטי (OCR)</p>
+            <p>4. המערכת תחלץ את השמות העבריים מכל עמוד</p>
+            <p>5. תוכל לראות את התוצאות ורמת הביטחון לכל שם</p>
+        </div>
+    </div>
+</div>
+{% endblock %} 
