@@ -31,5 +31,12 @@ RUN mkdir -p uploads
 ENV PYTHONPATH=/app
 ENV TESSDATA_PREFIX=/usr/share/tesseract-ocr/5/tessdata/
 
-# Run the test setup validation
-CMD ["python", "test_setup.py"] 
+# Health check
+HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
+  CMD python -c "import requests; requests.get('http://localhost:8000/health')" || exit 1
+
+# Expose port
+EXPOSE 8000
+
+# Run the application
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"] 

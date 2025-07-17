@@ -8,14 +8,12 @@ A FastAPI application that extracts Hebrew names from PDF payslips using OCR and
 
 **For Linux/macOS:**
 ```bash
-cd tests/
 chmod +x test.sh
 ./test.sh
 ```
 
 **For Windows:**
 ```cmd
-cd tests
 test.bat
 ```
 
@@ -29,12 +27,12 @@ Note: You'll need to provide your own PDF file for testing.
 
 1. **Test the setup:**
    ```bash
-   docker-compose -f config/docker-compose.test.yml run --rm test
+   docker-compose -f docker-compose.test.yml run --rm test
    ```
 
 2. **Run the application:**
    ```bash
-   docker-compose -f config/docker-compose.test.yml --profile app up --build
+   docker-compose -f docker-compose.test.yml --profile app up --build
    ```
 
 ### Option 3: Local Development
@@ -52,7 +50,7 @@ Note: You'll need to provide your own PDF file for testing.
 
 3. **Run the application:**
    ```bash
-   uvicorn app.main:app --host 0.0.0.0 --port 8000
+   python main.py
    ```
 
 ## 🧪 Testing Hebrew Name Extraction
@@ -66,6 +64,12 @@ Note: You'll need to provide your own PDF file for testing.
 2. Upload your Hebrew payslip PDF
 3. See the extracted names with confidence scores
 
+### Direct Testing (Command Line)
+```bash
+# Place your PDF as "example_payslip.pdf" in the project root
+python pdf_processor.py
+```
+
 ## 📋 Features
 
 - **PDF Text Extraction**: Direct text extraction from PDFs
@@ -78,7 +82,7 @@ Note: You'll need to provide your own PDF file for testing.
 ## 🔧 Customization
 
 ### Adding More Hebrew Names
-Edit the `hebrew_names` list in `app/pdf_processor.py`:
+Edit the `hebrew_names` list in `pdf_processor.py`:
 
 ```python
 self.hebrew_names = [
@@ -98,31 +102,18 @@ if similarity >= 90:  # Lower this number for more matches
 
 ```
 monthly-paycheck-saas/
-├── app/                   # Main application code
-│   ├── main.py           # FastAPI application
-│   ├── pdf_processor.py  # Core PDF processing and name extraction
-│   ├── templates/        # HTML templates
-│   │   ├── base.html     # Base template with Tailwind + htmx
-│   │   ├── index.html    # Upload page
-│   │   ├── results.html  # Results display
-│   │   ├── error.html    # Error handling
-│   │   └── test_names.html # Testing page
-│   └── static/           # Static files (CSS, JS)
-├── tests/                # Testing files
-│   ├── test_setup.py     # Environment validation
-│   ├── test.sh           # Linux/macOS test runner
-│   └── test.bat          # Windows test runner
-├── config/               # Configuration files
-│   ├── docker-compose.yml      # Production Docker config
-│   ├── docker-compose.test.yml # Testing Docker config
-│   ├── Dockerfile        # Production Dockerfile
-│   └── Dockerfile.test   # Testing Dockerfile
-├── docs/                 # Documentation
-│   ├── README.md         # Detailed documentation
-│   └── TESTING.md        # Testing guide
-├── uploads/              # Temporary file storage
-├── requirements.txt      # Python dependencies
-└── env.example          # Environment variables template
+├── main.py                 # FastAPI application
+├── pdf_processor.py        # Core PDF processing and name extraction
+├── requirements.txt        # Python dependencies
+├── Dockerfile             # Docker container configuration
+├── docker-compose.yml     # Multi-container orchestration
+├── templates/             # HTML templates
+│   ├── base.html          # Base template with Tailwind + htmx
+│   ├── index.html         # Upload page
+│   ├── results.html       # Results display
+│   ├── error.html         # Error handling
+│   └── test_names.html    # Testing page
+└── uploads/               # Temporary file storage
 ```
 
 ## 🌐 API Endpoints
@@ -146,16 +137,11 @@ monthly-paycheck-saas/
 ### Docker Issues
 ```bash
 # Rebuild without cache
-docker-compose -f config/docker-compose.yml build --no-cache
+docker-compose build --no-cache
 
 # Check logs
-docker-compose -f config/docker-compose.yml logs -f app
+docker-compose logs -f app
 ```
-
-## 📚 Documentation
-
-For detailed testing instructions, see [docs/TESTING.md](docs/TESTING.md).
-For complete documentation, see [docs/README.md](docs/README.md).
 
 ## 🚧 Next Steps (Future Phases)
 

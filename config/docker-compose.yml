@@ -2,12 +2,14 @@
 
 services:
   app:
-    build: .
+    build:
+      context: ..
+      dockerfile: config/Dockerfile
     ports:
       - "8000:8000"
     volumes:
-      - ./uploads:/app/uploads
-      - ./.env:/app/.env
+      - ../uploads:/app/uploads
+      - ../.env:/app/.env
     environment:
       - PYTHONPATH=/app
     restart: unless-stopped

@@ -98,12 +98,12 @@ def test_files():
     print("\n🔍 Testing required files...")
     
     files = [
-        'main.py',
-        'pdf_processor.py',
+        'app/main.py',
+        'app/pdf_processor.py',
         'requirements.txt',
-        'templates/base.html',
-        'templates/index.html',
-        'templates/results.html'
+        'app/templates/base.html',
+        'app/templates/index.html',
+        'app/templates/results.html'
     ]
     
     all_good = True
@@ -122,7 +122,7 @@ def test_hebrew_extraction():
     print("\n🔍 Testing Hebrew name extraction...")
     
     try:
-        from pdf_processor import HebrewNameExtractor
+        from app.pdf_processor import HebrewNameExtractor
         
         extractor = HebrewNameExtractor()
         

@@ -7,7 +7,7 @@ echo "================================================="
 # Function to run tests
 run_validation() {
     echo "🔍 Step 1: Running environment validation..."
-    docker-compose -f docker-compose.test.yml run --rm test
+    docker-compose -f "$(dirname "$0")/../config/docker-compose.test.yml" run --rm test
     
     if [ $? -eq 0 ]; then
         echo "✅ Environment validation passed!"
@@ -18,27 +18,14 @@ run_validation() {
     fi
 }
 
-# Function to create test PDF
-create_test_pdf() {
-    echo "📄 Step 2: Creating test PDF..."
-    docker-compose -f docker-compose.test.yml run --rm test python create_test_pdf.py
-    
-    if [ $? -eq 0 ]; then
-        echo "✅ Test PDF created successfully!"
-        return 0
-    else
-        echo "⚠️  Test PDF creation failed, but you can still test with your own PDF"
-        return 1
-    fi
-}
-
 # Function to start the application
 start_app() {
-    echo "🌐 Step 3: Starting web application..."
+    echo "🌐 Step 2: Starting web application..."
     echo "Open your browser to: http://localhost:8000"
+    echo "Upload your own PDF file to test the system"
     echo "Press Ctrl+C to stop the application"
     echo ""
-    docker-compose -f docker-compose.test.yml --profile app up --build
+    docker-compose -f "$(dirname "$0")/../config/docker-compose.test.yml" --profile app up --build
 }
 
 # Parse command line arguments
@@ -46,20 +33,16 @@ case "${1:-all}" in
     "validate")
         run_validation
         ;;
-    "pdf")
-        create_test_pdf
-        ;;
     "app")
         start_app
         ;;
     "all")
         run_validation
         if [ $? -eq 0 ]; then
-            create_test_pdf
             echo ""
             echo "🎉 Ready to test! Starting the application..."
             echo "   - Test basic name extraction: http://localhost:8000/test-names"
-            echo "   - Upload PDF for testing: http://localhost:8000"
+            echo "   - Upload your PDF for testing: http://localhost:8000"
             echo ""
             start_app
         else
@@ -71,16 +54,17 @@ case "${1:-all}" in
         echo "Usage: $0 [command]"
         echo ""
         echo "Commands:"
-        echo "  all       Run validation, create test PDF, and start app (default)"
+        echo "  all       Run validation and start app (default)"
         echo "  validate  Only run environment validation"
-        echo "  pdf       Only create test PDF"
         echo "  app       Only start the web application"
         echo "  help      Show this help message"
         echo ""
         echo "Examples:"
-        echo "  $0                # Run full test suite"
+        echo "  $0                # Run validation and start app"
         echo "  $0 validate       # Just check if everything is set up"
         echo "  $0 app           # Just start the web app"
+        echo ""
+        echo "Note: Bring your own PDF file for testing!"
         ;;
     *)
         echo "❌ Unknown command: $1"

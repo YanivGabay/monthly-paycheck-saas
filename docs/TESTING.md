@@ -17,24 +17,15 @@ This will check:
 - ✅ Hebrew name extraction works
 - ✅ All template files exist
 
-### Step 2: Create Test PDF (Optional)
-```bash
-# Build and create a test PDF with Hebrew names
-docker-compose -f docker-compose.test.yml run --rm test python create_test_pdf.py
-```
-
-This creates `test_payslip.pdf` with 3 pages containing Hebrew names:
-- Page 1: יוסף כהן (Yosef Cohen)
-- Page 2: מרים לוי (Miriam Levi)  
-- Page 3: דוד שלמה (David Shlomo)
-
-### Step 3: Run the Web Application
+### Step 2: Run the Web Application
 ```bash
 # Start the web application
 docker-compose -f docker-compose.test.yml --profile app up --build
 ```
 
 Then open your browser to: `http://localhost:8000`
+
+**Note**: You'll need to provide your own Hebrew PDF file for testing.
 
 ## 🎯 Testing Scenarios
 
@@ -45,10 +36,10 @@ Then open your browser to: `http://localhost:8000`
 
 ### Scenario 2: PDF Upload Test
 1. Go to `http://localhost:8000`
-2. Upload the generated `test_payslip.pdf` or your own Hebrew PDF
+2. Upload your own Hebrew PDF with payslip information
 3. Wait for processing (should take 5-15 seconds)
 4. Verify results show:
-   - 3 pages processed
+   - Pages processed
    - Hebrew names detected on each page
    - Confidence scores above 90%
 
@@ -60,15 +51,15 @@ Then open your browser to: `http://localhost:8000`
 
 ## 🔍 Expected Results
 
-### Test PDF Results
-The system should detect:
-- **Page 1**: יוסף (confidence: ~100%)
-- **Page 2**: מרים (confidence: ~100%)  
-- **Page 3**: דוד (confidence: ~100%)
-
 ### Text Extraction Test
 Sample text: "שם: יוסף כהן, עובד: מרים לוי"
 Expected: 2 names detected (יוסף, מרים)
+
+### PDF Upload Results
+When you upload a Hebrew PDF, the system should:
+- Extract text from each page
+- Identify Hebrew names with confidence scores
+- Display results in a clean, RTL-friendly interface
 
 ## 🐛 Troubleshooting
 
@@ -129,7 +120,6 @@ Modify the sample text in `main.py` at the `/test-names` endpoint.
 ## 📝 Test Checklist
 
 - [ ] Environment validation passes
-- [ ] Test PDF creation works
 - [ ] Web interface loads correctly (Hebrew RTL layout)
 - [ ] Name extraction test page works
 - [ ] PDF upload and processing completes

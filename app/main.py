@@ -11,7 +11,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from dotenv import load_dotenv
 
-from pdf_processor import HebrewNameExtractor
+from .pdf_processor import HebrewNameExtractor
 
 # Load environment variables
 load_dotenv()
@@ -19,14 +19,14 @@ load_dotenv()
 app = FastAPI(title="Monthly Paycheck SaaS", version="1.0.0")
 
 # Setup static files and templates
-app.mount("/static", StaticFiles(directory="static"), name="static")
-templates = Jinja2Templates(directory="templates")
+app.mount("/static", StaticFiles(directory="app/static"), name="static")
+templates = Jinja2Templates(directory="app/templates")
 
 # Initialize the Hebrew name extractor
 extractor = HebrewNameExtractor()
 
 # Create uploads directory if it doesn't exist
-UPLOAD_DIR = "uploads"
+UPLOAD_DIR = "../uploads"
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 @app.get("/", response_class=HTMLResponse)
