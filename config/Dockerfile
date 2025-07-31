@@ -8,9 +8,7 @@ RUN npm install --production=false
 # Set build-time environment variables for Vite
 ENV VITE_GOOGLE_CLIENT_ID="558633025816-fp47us6m08jv5khc4d14esj6jeugpror.apps.googleusercontent.com"
 
-RUN echo "=== Testing TypeScript compilation ==="
-RUN npx tsc --noEmit
-RUN echo "=== Starting React build ==="
+RUN echo "=== Starting React build (this will show TS errors) ==="
 RUN npm run build
 RUN echo "=== Build completed, checking dist ==="
 RUN ls -la dist/

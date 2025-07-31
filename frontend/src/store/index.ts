@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { AppState, CompanyTemplate, ProcessingResult, SetupStep, PreviewResult, EmailSendResult, User, UsageStats } from '@/types';
+import { AppState, CompanyTemplate, SetupStep, PreviewResult, EmailSendResult, User, UsageStats } from '@/types';
 import { authService } from '@/services/authService';
 
 interface AppActions {
@@ -37,7 +37,7 @@ interface AppActions {
   clearProcessing: () => void;
 }
 
-export const useAppStore = create<AppState & AppActions>((set, get) => ({
+export const useAppStore = create<AppState & AppActions>((set, _get) => ({
   // Auth state
   auth: {
     user: null,
@@ -129,7 +129,7 @@ export const useAppStore = create<AppState & AppActions>((set, get) => ({
     
     try {
       const authResponse = await authService.signInWithGoogle();
-      set((state) => ({
+      set((_state) => ({
         auth: {
           user: authResponse.user,
           token: authResponse.token,
@@ -140,8 +140,8 @@ export const useAppStore = create<AppState & AppActions>((set, get) => ({
         successMessage: `Welcome, ${authResponse.user.name}!`
       }));
     } catch (error: any) {
-      set((state) => ({
-        auth: { ...state.auth, isLoading: false },
+      set((_state) => ({
+        auth: { ..._state.auth, isLoading: false },
         error: `Authentication failed: ${error.message}`
       }));
     }
@@ -149,7 +149,7 @@ export const useAppStore = create<AppState & AppActions>((set, get) => ({
 
   signOut: () => {
     authService.logout();
-    set((state) => ({
+    set((_state) => ({
       auth: {
         user: null,
         token: null,
@@ -179,7 +179,7 @@ export const useAppStore = create<AppState & AppActions>((set, get) => ({
       const userData = await authService.getCurrentUser();
       
       if (userData) {
-        set((state) => ({
+        set((_state) => ({
           auth: {
             user: userData.user,
             token,
@@ -189,14 +189,14 @@ export const useAppStore = create<AppState & AppActions>((set, get) => ({
           }
         }));
       } else {
-        set((state) => ({ 
-          auth: { ...state.auth, isLoading: false }
+        set((_state) => ({ 
+          auth: { ..._state.auth, isLoading: false }
         }));
       }
     } catch (error) {
       authService.logout();
-      set((state) => ({ 
-        auth: { ...state.auth, isLoading: false }
+      set((_state) => ({ 
+        auth: { ..._state.auth, isLoading: false }
       }));
     }
   },
