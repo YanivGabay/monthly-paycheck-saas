@@ -2,9 +2,8 @@ FROM node:18-alpine AS frontend-builder
 
 # Build React frontend
 WORKDIR /frontend
-COPY frontend/package.json frontend/package-lock.json ./
-RUN npm ci
 COPY frontend/ ./
+RUN npm ci
 RUN npm run build
 
 # Python backend stage

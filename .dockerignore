@@ -88,8 +88,8 @@ venv/
 .venv/
 ENV/
 
-# Node.js (frontend build will handle its own dependencies)
-node_modules/
+# Node.js (exclude existing node_modules but allow package files)
+frontend/node_modules/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
