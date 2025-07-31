@@ -36,7 +36,7 @@ class GoogleAuthRequest(BaseModel):
     token: str = Field(..., min_length=10, max_length=2000)
 
 class ProcessPayslipRequest(BaseModel):
-    company_id: str = Field(..., min_length=1, max_length=100, regex="^[a-zA-Z0-9_-]+$")
+    company_id: str = Field(..., min_length=1, max_length=100, pattern="^[a-zA-Z0-9_-]+$")
 
 # File size limits (configurable via env)
 MAX_FILE_SIZE = int(os.getenv("MAX_FILE_SIZE_MB", "10")) * 1024 * 1024  # Default 10MB
