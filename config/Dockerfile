@@ -2,7 +2,7 @@ FROM node:18-alpine AS frontend-builder
 
 # Build React frontend
 WORKDIR /frontend
-COPY frontend/package*.json ./
+COPY frontend/package.json frontend/package-lock.json ./
 RUN npm ci
 COPY frontend/ ./
 RUN npm run build
@@ -13,15 +13,17 @@ FROM python:3.12-slim
 # Set working directory
 WORKDIR /app
 
-# Install system dependencies for PDF processing (optimized for Railway)
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    poppler-utils \
-    libgl1-mesa-glx \
-    libglib2.0-0 \
+# Install system dependencies for PDF processing (Railway optimized)
+# Split into smaller steps to avoid memory/timeout issues
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends poppler-utils \
     && apt-get clean \
-    && rm -rf /var/lib/apt/lists/* \
-    && rm -rf /tmp/* \
-    && rm -rf /var/tmp/*
+    && rm -rf /var/lib/apt/lists/*
+
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends libgl1-mesa-glx libglib2.0-0 \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 # Copy requirements first for better Docker layer caching
 COPY requirements.txt .
