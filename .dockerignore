@@ -1,0 +1,130 @@
+# ========================================
+# DOCKER SECURITY - EXCLUDE SENSITIVE DATA
+# ========================================
+
+# CRITICAL: Never include sensitive data in Docker images!
+# Docker images can be inspected by anyone with access to them.
+
+# Environment files (SECRETS!)
+.env
+.env.*
+!.env.example
+
+# Company configurations (PERSONAL DATA!)
+company_configs/
+*.company.json
+company_data/
+
+# Employee data files (PERSONAL INFORMATION!)
+employees*.csv
+workers*.csv  
+staff*.csv
+*employees*.json
+
+# Sample PDFs (may contain real payslip data)
+samples/
+sample_*.pdf
+example_*.pdf
+
+# Runtime/processing directories
+uploads/
+processing/
+previews/
+debug/
+
+# Temporary files
+*.pdf
+*.csv
+*.tmp
+temp_pdf/
+
+# Development files
+test_google_direct.html
+*.test.html
+
+# Git and version control
+.git/
+.gitignore
+*.orig
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Python cache and build artifacts  
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+venv/
+.venv/
+ENV/
+
+# Node.js (frontend build will handle its own dependencies)
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Logs
+*.log
+logs/
+
+# Documentation that's not needed in production
+*.md
+!README.md
+docs/
+
+# Test files
+tests/
+test_*
+*_test.py
+pytest_cache/
+.coverage
+.pytest_cache/
+
+# Scripts (not needed in production container)
+scripts/
+*.bat
+*.sh
+
+# Docker files (not needed inside the image)
+Dockerfile*
+docker-compose*.yml
+.dockerignore
+
+# Railway and deployment configs (not needed inside image)
+railway.json
+.railway/
+
+# Backup files
+*.backup
+*.bak

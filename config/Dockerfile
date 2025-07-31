@@ -25,17 +25,17 @@ RUN apt-get update && apt-get install -y \
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy application code
+# Copy application code (NO SENSITIVE DATA!)
 COPY app/ ./app/
 COPY config/ ./config/
-COPY company_configs/ ./company_configs/
-COPY .env* ./
+# NOTE: company_configs/ and .env* are excluded via .dockerignore for security
+# These will be provided at runtime via environment variables and volumes
 
 # Copy built frontend from previous stage
 COPY --from=frontend-builder /frontend/dist ./frontend/dist
 
-# Create necessary directories
-RUN mkdir -p uploads previews samples debug
+# Create necessary directories (empty, will be populated at runtime)
+RUN mkdir -p uploads previews samples debug company_configs
 
 # Set environment variables
 ENV PYTHONPATH=/app
