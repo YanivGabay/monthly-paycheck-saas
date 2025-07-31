@@ -50,10 +50,6 @@ RUN mkdir -p uploads previews samples debug company_configs
 # Set environment variables
 ENV PYTHONPATH=/app
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
-  CMD python -c "import requests; requests.get('http://localhost:8000/api/health')" || exit 1
-
 # Expose port
 EXPOSE 8000
 
