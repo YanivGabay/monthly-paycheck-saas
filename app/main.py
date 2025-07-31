@@ -85,7 +85,7 @@ async def add_security_headers(request: Request, call_next):
     
     return response
 
-# Include API routes
+# Include API routes FIRST (higher priority)
 app.include_router(router)
 
 # Serve React app static files
@@ -96,24 +96,19 @@ if frontend_dist.exists():
     if static_dir.exists():
         app.mount("/assets", StaticFiles(directory=str(static_dir)), name="assets")
     
+    # Catch-all route for React app (must be last)
     @app.get("/{path:path}")
-    async def serve_react_app(request: Request, path: str):
+    async def serve_react_app(path: str):
         """Serve React app for all non-API routes"""
-        if path.startswith("api/"):
-            # Let API routes handle this
-            return
-        
-        # Serve index.html for React routing
+        # Serve index.html for React routing (React will handle the path)
         index_file = frontend_dist / "index.html"
         return FileResponse(index_file)
 else:
-    # Development: Show helpful message
+    # Development: Show helpful message  
     @app.get("/{path:path}")
     async def serve_development_message(request: Request, path: str):
         """Development fallback when React app isn't built"""
-        if path.startswith("api/"):
-            # Let API routes handle this
-            return
+        # API routes are already handled above
         
         return HTMLResponse("""
         <html>
