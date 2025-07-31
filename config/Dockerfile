@@ -57,6 +57,6 @@ HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
 # Expose port
 EXPOSE 8000
 
-# Run the application
-# Use shell form to correctly substitute the $PORT variable provided by Railway
-CMD uvicorn app.main:app --host 0.0.0.0 --port $PORT 
+# Run the application using the PORT variable provided by the environment
+# Note: The actual port is set by Railway's $PORT variable, not hardcoded here.
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"] 
