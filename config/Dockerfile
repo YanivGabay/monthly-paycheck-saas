@@ -59,4 +59,4 @@ EXPOSE 8000
 
 # Run the application using the PORT variable provided by the environment
 # Note: The actual port is set by Railway's $PORT variable, not hardcoded here.
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"] test 8
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
