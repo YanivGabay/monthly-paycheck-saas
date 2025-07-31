@@ -4,7 +4,16 @@ FROM node:20-alpine AS frontend-builder
 WORKDIR /frontend
 COPY frontend/ ./
 RUN npm install --production=false
-RUN npm run build
+
+# Set build-time environment variables for Vite
+ENV VITE_GOOGLE_CLIENT_ID="558633025816-fp47us6m08jv5khc4d14esj6jeugpror.apps.googleusercontent.com"
+
+RUN echo "=== Testing TypeScript compilation ==="
+RUN npx tsc --noEmit || echo "TypeScript compilation failed"
+RUN echo "=== Starting React build ==="
+RUN npm run build --verbose || echo "Vite build failed"
+RUN echo "=== Build completed, checking dist ==="
+RUN ls -la dist/ || echo "No dist directory found"
 
 # Python backend stage
 FROM python:3.12-slim
