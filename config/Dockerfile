@@ -50,9 +50,10 @@ RUN mkdir -p uploads previews samples debug company_configs
 # Set environment variables
 ENV PYTHONPATH=/app
 
-# Expose port
-EXPOSE 8000
+# Expose port (Railway will set PORT dynamically, usually 8080)
+EXPOSE 8080
 
 # Run the application using the PORT variable provided by the environment
-# Note: The actual port is set by Railway's $PORT variable, not hardcoded here.
-CMD sh -c "uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}"
+# Railway sets PORT dynamically (usually 8080), fallback to 8000 for local dev
+# Using shell form to ensure environment variable substitution works correctly
+CMD sh -c "echo Starting uvicorn on port ${PORT:-8000} && uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000} --log-level info"
