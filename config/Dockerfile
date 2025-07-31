@@ -1,9 +1,9 @@
-FROM node:18-alpine AS frontend-builder
+FROM node:20-alpine AS frontend-builder
 
 # Build React frontend
 WORKDIR /frontend
 COPY frontend/ ./
-RUN npm ci
+RUN npm install --production=false
 RUN npm run build
 
 # Python backend stage
