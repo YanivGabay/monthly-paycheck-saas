@@ -88,6 +88,16 @@ async def add_security_headers(request: Request, call_next):
 # Include API routes FIRST (higher priority)
 app.include_router(router)
 
+# Railway debugging: Add a simple catch-all to see what's happening
+@app.middleware("http")
+async def debug_requests(request, call_next):
+    """Debug middleware to log all incoming requests"""
+    print(f"🔍 RAILWAY REQUEST: {request.method} {request.url.path}")
+    print(f"🔍 Headers: {dict(request.headers)}")
+    response = await call_next(request)
+    print(f"🔍 Response status: {response.status_code}")
+    return response
+
 # Test route to debug routing issues
 @app.get("/test-route")
 async def test_route():
