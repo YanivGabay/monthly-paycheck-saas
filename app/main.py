@@ -20,7 +20,15 @@ logger = logging.getLogger(__name__)
 # Get environment settings
 ENVIRONMENT = os.getenv("ENVIRONMENT", "development")
 DEBUG = os.getenv("DEBUG", "True").lower() == "true"
-ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS", "localhost,127.0.0.1").split(",")
+
+# Domain configuration - simplified to one variable
+PRODUCTION_DOMAIN = os.getenv("PRODUCTION_DOMAIN")
+
+# Auto-generate allowed hosts from production domain
+if PRODUCTION_DOMAIN:
+    ALLOWED_HOSTS = [PRODUCTION_DOMAIN, f"www.{PRODUCTION_DOMAIN}", "localhost", "127.0.0.1"]
+else:
+    ALLOWED_HOSTS = ["localhost", "127.0.0.1"]
 
 app = FastAPI(
     title="Monthly Paycheck SaaS", 
@@ -32,33 +40,28 @@ app = FastAPI(
 
 # Security Middleware (order matters!)
 if ENVIRONMENT == "production":
-    # Only allow trusted hosts in production
-    app.add_middleware(
-        TrustedHostMiddleware, 
-        allowed_hosts=ALLOWED_HOSTS
-    )
+    # Check if we're on Railway (Railway sets RAILWAY_ENVIRONMENT)
+    is_railway = os.getenv("RAILWAY_ENVIRONMENT") is not None
+    
+    if not is_railway:
+        # Only use TrustedHostMiddleware on non-Railway deployments
+        # Railway handles host validation at the platform level
+        app.add_middleware(
+            TrustedHostMiddleware, 
+            allowed_hosts=ALLOWED_HOSTS
+        )
+        logger.info("🔒 TrustedHostMiddleware enabled for non-Railway production")
+    else:
+        logger.info("🚂 Railway deployment detected - skipping TrustedHostMiddleware")
 
-# CORS Middleware
-allowed_origins = []
-if DEBUG:
-    # Development: Allow local origins
-    allowed_origins.extend([
-        "http://localhost:3000",
-        "http://127.0.0.1:3000", 
-        "http://localhost:8000"
-    ])
-else:
-    # Production: Only allow your domain
-    production_domain = os.getenv("PRODUCTION_DOMAIN")
-    if production_domain:
-        allowed_origins.extend([
-            f"https://{production_domain}",
-            f"https://www.{production_domain}"
-        ])
-
+# CORS Middleware  
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=allowed_origins,
+    allow_origins=[
+        "http://localhost:3000", "http://127.0.0.1:3000", "http://localhost:8000"
+    ] if DEBUG else [
+        f"https://{PRODUCTION_DOMAIN}", f"https://www.{PRODUCTION_DOMAIN}"
+    ] if PRODUCTION_DOMAIN else [],
     allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "DELETE"],
     allow_headers=["*"],
