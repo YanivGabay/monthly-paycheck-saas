@@ -57,14 +57,34 @@ async def health_check():
         "environment": os.getenv("ENVIRONMENT", "development")
     }
 
-# Test route for debugging
-@router.get("/test-router")
+# Test route for debugging (with /api prefix like working routes)
+@router.get("/api/test-router")
 async def test_router_route():
     """Test route via router to debug routing issues"""
-    print("🧪 Router test route accessed!")
-    return {"message": "Router test route works!", "status": "success", "path": "via_router"}
+    print("🧪 API Router test route accessed!")
+    return {"message": "API Router test route works!", "status": "success", "path": "via_api_router"}
 
-# Root route via router
+# Test route for frontend serving
+@router.get("/api/frontend-test")
+async def test_frontend_serving():
+    """Test frontend file serving"""
+    from pathlib import Path
+    from fastapi.responses import FileResponse
+    print("🎯 Testing frontend serving via API route")
+    
+    frontend_dist = Path("frontend/dist")
+    index_file = frontend_dist / "index.html"
+    print(f"📄 Index file exists: {index_file.exists()}")
+    print(f"📁 Full path: {index_file.absolute()}")
+    
+    if index_file.exists():
+        print("✅ Returning FileResponse for index.html via API route")
+        return FileResponse(index_file)
+    else:
+        print(f"❌ Index file not found: {index_file}")
+        return {"error": "Frontend not found", "path": str(index_file)}
+
+# Root route via router (keeping this as backup)
 @router.get("/")
 async def serve_react_via_router():
     """Serve React app via router"""
