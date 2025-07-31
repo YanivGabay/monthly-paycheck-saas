@@ -90,19 +90,39 @@ app.include_router(router)
 
 # Serve React app static files
 frontend_dist = Path("frontend/dist")
+logger.info(f"🔍 Checking frontend dist at: {frontend_dist.absolute()}")
+logger.info(f"📁 Frontend dist exists: {frontend_dist.exists()}")
+
 if frontend_dist.exists():
+    logger.info("✅ Production mode: Serving built React app")
     # Production: Serve built React app
     static_dir = frontend_dist / "assets"
     if static_dir.exists():
         app.mount("/assets", StaticFiles(directory=str(static_dir)), name="assets")
+        logger.info(f"📦 Mounted static assets from: {static_dir}")
+    else:
+        logger.warning(f"⚠️ Assets directory not found: {static_dir}")
     
     # Catch-all route for React app (must be last)
     @app.get("/{path:path}")
     async def serve_react_app(path: str):
         """Serve React app for all non-API routes"""
-        # Serve index.html for React routing (React will handle the path)
-        index_file = frontend_dist / "index.html"
-        return FileResponse(index_file)
+        try:
+            # Debug logging
+            logger.info(f"🎯 Serving React app for path: '{path}'")
+            logger.info(f"📁 Frontend dist path: {frontend_dist}")
+            logger.info(f"📄 Index file exists: {(frontend_dist / 'index.html').exists()}")
+            
+            # Serve index.html for React routing (React will handle the path)
+            index_file = frontend_dist / "index.html"
+            if index_file.exists():
+                return FileResponse(index_file)
+            else:
+                logger.error(f"❌ Index file not found: {index_file}")
+                return HTMLResponse("Frontend index.html not found", status_code=500)
+        except Exception as e:
+            logger.error(f"❌ Error serving React app: {e}")
+            return HTMLResponse(f"Error serving frontend: {str(e)}", status_code=500)
 else:
     # Development: Show helpful message  
     @app.get("/{path:path}")
