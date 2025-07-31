@@ -35,8 +35,8 @@ RUN apt-get update \
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy application code (NO SENSITIVE DATA!)
-COPY app/ ./app/
+# Copy application code directly to working directory (NO SENSITIVE DATA!)
+COPY app/ ./
 COPY config/ ./config/
 # NOTE: company_configs/ and .env* are excluded via .dockerignore for security
 # These will be provided at runtime via environment variables and volumes
@@ -59,4 +59,4 @@ EXPOSE 8000
 
 # Run the application using the PORT variable provided by the environment
 # Note: The actual port is set by Railway's $PORT variable, not hardcoded here.
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"] 
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"] 
