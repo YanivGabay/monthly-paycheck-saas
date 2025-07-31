@@ -103,6 +103,24 @@ if frontend_dist.exists():
     else:
         logger.warning(f"⚠️ Assets directory not found: {static_dir}")
     
+    # Specific root route handler
+    @app.get("/")
+    async def serve_react_root():
+        """Serve React app for root route"""
+        try:
+            logger.info("🎯 Serving React app for ROOT path '/'")
+            index_file = frontend_dist / "index.html"
+            logger.info(f"📄 Index file exists: {index_file.exists()}")
+            
+            if index_file.exists():
+                return FileResponse(index_file)
+            else:
+                logger.error(f"❌ Index file not found: {index_file}")
+                return HTMLResponse("Frontend index.html not found", status_code=500)
+        except Exception as e:
+            logger.error(f"❌ Error serving React root: {e}")
+            return HTMLResponse(f"Error serving frontend root: {str(e)}", status_code=500)
+    
     # Catch-all route for React app (must be last)
     @app.get("/{path:path}")
     async def serve_react_app(path: str):
