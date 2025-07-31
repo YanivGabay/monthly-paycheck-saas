@@ -1,0 +1,35 @@
+# Lightweight Dockerfile for OAuth configuration tests only
+FROM python:3.10-slim
+
+# Set the working directory
+WORKDIR /app
+
+# Copy requirements and install minimal dependencies for OAuth tests
+COPY requirements.txt .
+
+# Install only essential packages for OAuth testing (no OCR/PDF processing)
+RUN pip install --no-cache-dir \
+    pytest \
+    pytest-asyncio \
+    fastapi \
+    python-jose[cryptography] \
+    google-auth \
+    google-auth-oauthlib \
+    python-dotenv \
+    httpx
+
+# Copy only the necessary files for OAuth testing
+COPY app/services/auth_service.py app/services/
+COPY app/__init__.py app/
+COPY tests/test_auth.py tests/
+COPY tests/__init__.py tests/
+COPY .env* ./
+
+# Create frontend directory 
+RUN mkdir -p frontend
+
+# Create empty __init__.py files if they don't exist
+RUN touch app/services/__init__.py
+
+# Default command for OAuth tests only
+CMD ["pytest", "tests/test_auth.py::TestOAuthConfiguration", "-v"]

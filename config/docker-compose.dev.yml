@@ -1,0 +1,23 @@
+# Development docker-compose - Backend only
+# Frontend runs separately with `npm run dev` on port 3000
+
+services:
+  app:
+    build:
+      context: ..
+      dockerfile: config/Dockerfile.dev
+    ports:
+      - "8000:8000"
+    volumes:
+      # Mount source code for hot reload
+      - ../app:/app/app
+      - ../company_configs:/app/company_configs
+      - ../uploads:/app/uploads
+      - ../debug:/app/debug
+      - ../samples:/app/samples
+      - ../previews:/app/previews
+      - ../.env:/app/.env
+    environment:
+      - PYTHONPATH=/app
+      - DEBUG=True
+    restart: unless-stopped 

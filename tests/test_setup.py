@@ -14,32 +14,14 @@ def test_imports():
     try:
         import fastapi
         print("   ✅ FastAPI")
-    except ImportError:
-        print("   ❌ FastAPI - run: pip install fastapi")
-        return False
-    
-    try:
-        import pypdf
+        import PyPDF2 as pypdf # Use the correct import name
         print("   ✅ pypdf")
-    except ImportError:
-        print("   ❌ pypdf - run: pip install pypdf")
-        return False
-    
-    try:
         import pytesseract
         print("   ✅ pytesseract")
-    except ImportError:
-        print("   ❌ pytesseract - run: pip install pytesseract")
-        return False
-    
-    try:
         import rapidfuzz
         print("   ✅ rapidfuzz")
-    except ImportError:
-        print("   ❌ rapidfuzz - run: pip install rapidfuzz")
-        return False
-    
-    return True
+    except ImportError as e:
+        assert False, f"Failed to import required package: {e}"
 
 def test_tesseract():
     """Test Tesseract OCR installation"""
@@ -49,144 +31,76 @@ def test_tesseract():
         import pytesseract
         version = pytesseract.get_tesseract_version()
         print(f"   ✅ Tesseract version: {version}")
-        
+        assert version is not None
+
         # Test Hebrew language support
-        try:
-            langs = pytesseract.get_languages()
-            if 'heb' in langs:
-                print("   ✅ Hebrew language support found")
-                return True
-            else:
-                print("   ⚠️  Hebrew language pack not found")
-                print("       Install with: sudo apt-get install tesseract-ocr-heb")
-                return False
-        except Exception as e:
-            print(f"   ⚠️  Could not check language support: {e}")
-            return False
-            
+        langs = pytesseract.get_languages()
+        assert 'heb' in langs, "Hebrew language pack not found for Tesseract."
+        print("   ✅ Hebrew language support found")
+
     except Exception as e:
-        print(f"   ❌ Tesseract not found: {e}")
-        print("       Install with: sudo apt-get install tesseract-ocr tesseract-ocr-heb")
-        return False
+        assert False, f"Tesseract OCR check failed: {e}. Ensure it is installed and in the system's PATH."
 
 def test_directories():
     """Test that required directories exist"""
     print("\n🔍 Testing directory structure...")
     
-    dirs = ['templates', 'static']
-    all_good = True
+    dirs = ['app', 'company_configs', 'config', 'frontend', 'tests']
     
     for directory in dirs:
-        if Path(directory).exists():
-            print(f"   ✅ {directory}/")
-        else:
-            print(f"   ❌ {directory}/ not found")
-            all_good = False
-    
-    # Create uploads directory if it doesn't exist (runtime directory)
-    uploads_dir = Path('uploads')
-    if not uploads_dir.exists():
-        uploads_dir.mkdir(exist_ok=True)
-        print(f"   ✅ uploads/ (created)")
-    else:
-        print(f"   ✅ uploads/")
-    
-    return all_good
+        assert Path(directory).exists(), f"Required directory not found: {directory}/"
+        print(f"   ✅ {directory}/")
 
-def test_files():
-    """Test that required files exist"""
+    # Ensure runtime directories can be created
+    try:
+        Path('uploads').mkdir(exist_ok=True)
+        print("   ✅ uploads/ (checked/created)")
+        Path('previews').mkdir(exist_ok=True)
+        print("   ✅ previews/ (checked/created)")
+        Path('debug').mkdir(exist_ok=True)
+        print("   ✅ debug/ (checked/created)")
+    except Exception as e:
+        assert False, f"Failed to create runtime directory: {e}"
+
+
+def test_required_files():
+    """Test that critical files exist"""
     print("\n🔍 Testing required files...")
     
     files = [
         'app/main.py',
-        'app/pdf_processor.py',
+        'app/routes.py',
+        'app/config.py',
+        'app/services/ai_vision.py',
+        'app/services/email_service.py',
+        'app/services/pdf_service.py',
         'requirements.txt',
-        'app/templates/base.html',
-        'app/templates/index.html',
-        'app/templates/results.html'
+        'frontend/package.json',
+        'config/docker-compose.yml',
     ]
-    
-    all_good = True
     
     for file_path in files:
-        if Path(file_path).exists():
-            print(f"   ✅ {file_path}")
-        else:
-            print(f"   ❌ {file_path} not found")
-            all_good = False
-    
-    return all_good
+        assert Path(file_path).exists(), f"Required file not found: {file_path}"
+        print(f"   ✅ {file_path}")
 
-def test_hebrew_extraction():
-    """Test basic Hebrew name extraction"""
-    print("\n🔍 Testing Hebrew name extraction...")
+def test_template_system_and_config():
+    """Test basic template system and config manager initialization"""
+    print("\n🔍 Testing config manager...")
     
     try:
-        from app.pdf_processor import HebrewNameExtractor
+        # This indirectly tests the imports within the modules
+        from app.config import config_manager
         
-        extractor = HebrewNameExtractor()
+        # Test configuration system
+        companies = config_manager.list_companies()
         
-        # Test with sample Hebrew text
-        sample_text = "שם: יוסף כהן, עובד: מרים לוי"
-        names = extractor.extract_names_from_text(sample_text)
+        print(f"   ✅ Config manager loaded successfully")
+        print(f"   📊 Found {len(companies)} company configurations")
         
-        if names:
-            print(f"   ✅ Found {len(names)} names:")
-            for name, confidence in names:
-                print(f"      - {name} ({confidence}%)")
-            return True
-        else:
-            print("   ⚠️  No names extracted - this might be OK if names aren't in the default list")
-            return True
+        if companies:
+            print(f"   🏢 Companies: {', '.join(companies)}")
+
+        assert isinstance(companies, list)
             
     except Exception as e:
-        print(f"   ❌ Error testing name extraction: {e}")
-        return False
-
-def main():
-    """Run all tests"""
-    print("🚀 Monthly Paycheck SaaS - Setup Validation\n")
-    
-    tests = [
-        ("Package imports", test_imports),
-        ("Tesseract OCR", test_tesseract),
-        ("Directory structure", test_directories),
-        ("Required files", test_files),
-        ("Hebrew extraction", test_hebrew_extraction)
-    ]
-    
-    results = []
-    
-    for test_name, test_func in tests:
-        try:
-            result = test_func()
-            results.append(result)
-        except Exception as e:
-            print(f"   ❌ Error running test: {e}")
-            results.append(False)
-    
-    print("\n" + "="*50)
-    print("📊 SUMMARY:")
-    
-    passed = sum(results)
-    total = len(results)
-    
-    for i, (test_name, _) in enumerate(tests):
-        status = "✅ PASS" if results[i] else "❌ FAIL"
-        print(f"   {status} - {test_name}")
-    
-    print(f"\n   {passed}/{total} tests passed")
-    
-    if passed == total:
-        print("\n🎉 All tests passed! You're ready to run the application:")
-        print("   python main.py")
-        print("   OR")
-        print("   docker-compose up --build")
-    else:
-        print(f"\n⚠️  {total - passed} test(s) failed. Please fix the issues above.")
-    
-    return passed == total
-
-if __name__ == "__main__":
-    success = main()
-    sys.exit(0 if success else 1) 
+        assert False, f"Error initializing or using the config manager: {e}" 

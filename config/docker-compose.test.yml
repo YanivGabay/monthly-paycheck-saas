@@ -1,15 +1,17 @@
 # Modern docker-compose (no version needed)
 
 services:
-  test:
+  backend-test:
     build:
       context: ..
       dockerfile: config/Dockerfile.test
-    volumes:
-      - ..:/app
-    environment:
-      - PYTHONPATH=/app
-    working_dir: /app
+    container_name: monthly-paycheck-test
+    # Pass environment variables from a .env file at the root of the project
+    env_file:
+      - ../.env
+    # The command to run the tests.
+    # This overrides the CMD in the Dockerfile for clarity.
+    command: pytest -v -rs -s tests/
 
   # Main app for testing after validation
   app:

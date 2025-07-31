@@ -8,24 +8,26 @@ services:
     ports:
       - "8000:8000"
     volumes:
-      - ../uploads:/app/uploads
+      # Mount data directories for persistence
+      - ../company_configs:/app/company_configs
+      - uploads_data:/app/uploads
+      - debug_data:/app/debug
+      - samples_data:/app/samples
+      - previews_data:/app/previews
+      # Mount .env file if it exists
       - ../.env:/app/.env
     environment:
       - PYTHONPATH=/app
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "python", "-c", "import requests; requests.get('http://localhost:8000/health')"]
+      test: ["CMD", "python", "-c", "import requests; requests.get('http://localhost:8000/api/health')"]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 40s
 
-  # Add Redis for future RQ worker support
-  redis:
-    image: redis:7-alpine
-    restart: unless-stopped
-    volumes:
-      - redis_data:/data
-
 volumes:
-  redis_data: 
+  uploads_data:
+  debug_data:
+  samples_data:
+  previews_data: 

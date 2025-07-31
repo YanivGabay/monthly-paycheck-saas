@@ -1,0 +1,14 @@
+# Lightweight docker-compose for OAuth configuration tests only
+services:
+  oauth-test:
+    build:
+      context: ..
+      dockerfile: config/Dockerfile.oauth-test
+    container_name: oauth-config-test
+    env_file:
+      - ../.env
+    volumes:
+      # Mount the frontend directory to access .env file
+      - ../frontend/.env:/app/frontend/.env:ro
+    # Fast OAuth-only tests with async support
+    command: pytest tests/test_auth.py::TestOAuthConfiguration -v -s --tb=short --asyncio-mode=auto
