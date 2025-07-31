@@ -57,6 +57,33 @@ async def health_check():
         "environment": os.getenv("ENVIRONMENT", "development")
     }
 
+# Test route for debugging
+@router.get("/test-router")
+async def test_router_route():
+    """Test route via router to debug routing issues"""
+    print("🧪 Router test route accessed!")
+    return {"message": "Router test route works!", "status": "success", "path": "via_router"}
+
+# Root route via router
+@router.get("/")
+async def serve_react_via_router():
+    """Serve React app via router"""
+    from pathlib import Path
+    from fastapi.responses import FileResponse
+    print("🎯 Serving React app via ROUTER for ROOT path '/'")
+    
+    frontend_dist = Path("frontend/dist")
+    index_file = frontend_dist / "index.html"
+    print(f"📄 Index file exists: {index_file.exists()}")
+    print(f"📁 Full path: {index_file.absolute()}")
+    
+    if index_file.exists():
+        print("✅ Returning FileResponse for index.html via router")
+        return FileResponse(index_file)
+    else:
+        print(f"❌ Index file not found: {index_file}")
+        return {"error": "Frontend not found", "path": str(index_file)}
+
 # Request size validation middleware
 async def validate_file_size(file: UploadFile = File(...)):
     """Validate uploaded file size and type"""

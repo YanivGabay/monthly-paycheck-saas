@@ -95,26 +95,7 @@ async def test_route():
     logger.info("🧪 Test route accessed!")
     return {"message": "Test route works!", "status": "success"}
 
-# Define root route BEFORE static files to avoid conflicts
-@app.get("/")
-async def serve_react_root():
-    """Serve React app for root route"""
-    try:
-        logger.info("🎯 Serving React app for ROOT path '/'")
-        frontend_dist = Path("frontend/dist")
-        index_file = frontend_dist / "index.html"
-        logger.info(f"📄 Index file exists: {index_file.exists()}")
-        logger.info(f"📁 Full path: {index_file.absolute()}")
-        
-        if index_file.exists():
-            logger.info("✅ Returning FileResponse for index.html")
-            return FileResponse(index_file)
-        else:
-            logger.error(f"❌ Index file not found: {index_file}")
-            return HTMLResponse("Frontend index.html not found", status_code=500)
-    except Exception as e:
-        logger.error(f"❌ Error serving React root: {e}")
-        return HTMLResponse(f"Error serving frontend root: {str(e)}", status_code=500)
+# Root route now handled by router - see app/routes.py
 
 # Serve React app static files
 frontend_dist = Path("frontend/dist")
