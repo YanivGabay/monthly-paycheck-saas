@@ -54,14 +54,20 @@ if ENVIRONMENT == "production":
     else:
         logger.info("🚂 Railway deployment detected - skipping TrustedHostMiddleware")
 
-# CORS Middleware  
+# CORS Middleware with debug logging
+cors_origins = [
+    "http://localhost:3000", "http://127.0.0.1:3000", "http://localhost:8000"
+] if DEBUG else [
+    f"https://{PRODUCTION_DOMAIN}", f"https://www.{PRODUCTION_DOMAIN}"
+] if PRODUCTION_DOMAIN else []
+
+logger.info(f"🌐 CORS Origins: {cors_origins}")
+logger.info(f"🔧 DEBUG mode: {DEBUG}")
+logger.info(f"🌍 PRODUCTION_DOMAIN: {PRODUCTION_DOMAIN}")
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:3000", "http://127.0.0.1:3000", "http://localhost:8000"
-    ] if DEBUG else [
-        f"https://{PRODUCTION_DOMAIN}", f"https://www.{PRODUCTION_DOMAIN}"
-    ] if PRODUCTION_DOMAIN else [],
+    allow_origins=cors_origins,
     allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "DELETE"],
     allow_headers=["*"],
