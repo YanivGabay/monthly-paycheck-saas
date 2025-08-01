@@ -374,33 +374,47 @@ async def process_payslip_preview(
     user_info: Dict = Depends(check_rate_limit_dependency("ai_calls"))
 ):
     """Step 1: Analyzes the payslip PDF and returns a preview of matches."""
+    logger.info(f"[{company_id}] - PREVIEW_START: Received request for file {file.filename}")
+    
     template = config_manager.load_template()
     if not template:
+        logger.error(f"[{company_id}] - PREVIEW_FAIL: Company not found.")
         raise HTTPException(status_code=404, detail="Company not found")
+    logger.info(f"[{company_id}] - PREVIEW_LOG: Company template loaded.")
 
     if not file.filename.lower().endswith('.pdf'):
+        logger.error(f"[{company_id}] - PREVIEW_FAIL: Invalid file type {file.filename}")
         raise HTTPException(status_code=400, detail="Please upload a PDF file")
 
     process_id = str(uuid.uuid4())
     pdf_path = os.path.join(PROCESSING_DIR, f"{process_id}.pdf")
     results_path = os.path.join(PROCESSING_DIR, f"{process_id}.json")
+    logger.info(f"[{company_id}] - PREVIEW_LOG: Generated process ID {process_id}")
 
     try:
         # Save the uploaded PDF
+        logger.info(f"[{company_id}] - PREVIEW_LOG: Saving uploaded PDF to {pdf_path}")
         with open(pdf_path, "wb") as buffer:
             content = await file.read()
             buffer.write(content)
+        logger.info(f"[{company_id}] - PREVIEW_LOG: Successfully saved PDF.")
 
         # Process with AI vision to get results for preview
+        logger.info(f"[{company_id}] - PREVIEW_LOG: Starting AI Vision processing...")
         results = await ai_vision.process_payslip_pdf(pdf_path, template)
+        logger.info(f"[{company_id}] - PREVIEW_LOG: AI Vision processing complete.")
 
         # Cache the results to a JSON file
+        logger.info(f"[{company_id}] - PREVIEW_LOG: Caching results to {results_path}")
         with open(results_path, "w", encoding="utf-8") as f:
             json.dump(results, f, ensure_ascii=False, indent=2)
+        logger.info(f"[{company_id}] - PREVIEW_LOG: Results cached successfully.")
 
         # Increment AI usage counter after successful processing
         auth_service.increment_usage(user_info["google_user_id"], "ai_calls")
+        logger.info(f"[{company_id}] - PREVIEW_LOG: AI usage counter incremented.")
 
+        logger.info(f"[{company_id}] - PREVIEW_SUCCESS: Preview generation complete.")
         return {
             "success": True,
             "process_id": process_id,
@@ -409,6 +423,7 @@ async def process_payslip_preview(
             "company": template.company_name
         }
     except Exception as e:
+        logger.error(f"[{company_id}] - PREVIEW_ERROR: An exception occurred: {str(e)}", exc_info=True)
         # Clean up files on error
         if os.path.exists(pdf_path):
             os.remove(pdf_path)
