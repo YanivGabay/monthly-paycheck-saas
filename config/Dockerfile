@@ -56,4 +56,4 @@ EXPOSE 8080
 # Run the application using the PORT variable provided by the environment
 # Railway sets PORT dynamically (usually 8080), fallback to 8000 for local dev
 # Using shell form to ensure environment variable substitution works correctly
-CMD sh -c "echo Starting uvicorn on port ${PORT:-8000} && uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000} --log-level info"
+CMD sh -c "echo Starting uvicorn on port ${PORT:-8080} && uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8080} --log-level info"
