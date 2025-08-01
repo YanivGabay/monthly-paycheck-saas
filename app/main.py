@@ -55,15 +55,20 @@ if ENVIRONMENT == "production":
         logger.info("🚂 Railway deployment detected - skipping TrustedHostMiddleware")
 
 # CORS Middleware with debug logging
-cors_origins = [
-    "http://localhost:3000", "http://127.0.0.1:3000", "http://localhost:8000"
-] if DEBUG else [
-    f"https://{PRODUCTION_DOMAIN}", f"https://www.{PRODUCTION_DOMAIN}"
-] if PRODUCTION_DOMAIN else []
+if DEBUG:
+    cors_origins = [
+        "http://localhost:3000", "http://127.0.0.1:3000", "http://localhost:8000"
+    ]
+else:
+    # Hardcoding for debugging Railway env var issue.
+    # This bypasses the problematic PRODUCTION_DOMAIN variable.
+    cors_origins = [
+        "https://monthly-paycheck-saas-production.up.railway.app"
+    ]
 
-logger.info(f"🌐 CORS Origins: {cors_origins}")
+logger.info(f"🌐 CORS Origins (Hardcoded for Debug): {cors_origins}")
 logger.info(f"🔧 DEBUG mode: {DEBUG}")
-logger.info(f"🌍 PRODUCTION_DOMAIN: {PRODUCTION_DOMAIN}")
+logger.info(f"🌍 PRODUCTION_DOMAIN from env: {os.getenv('PRODUCTION_DOMAIN')}")
 
 app.add_middleware(
     CORSMiddleware,
