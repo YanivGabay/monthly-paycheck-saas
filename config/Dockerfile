@@ -6,7 +6,7 @@ COPY frontend/ ./
 RUN npm install --production=false
 
 # Set build-time environment variables for Vite
-ENV VITE_GOOGLE_CLIENT_ID="558633025816-fp47us6m08jv5khc4d14esj6jeugpror.apps.googleusercontent.com"
+ENV VITE_GOOGLE_CLIENT_ID="14452849971-k607c8k3kg3mc2jp9bstf3tnkbst4qgb.apps.googleusercontent.com"
 
 RUN echo "=== Starting React build (this will show TS errors) ==="
 RUN npm run build
