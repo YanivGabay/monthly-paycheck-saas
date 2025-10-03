@@ -21,7 +21,7 @@ services:
     # HTTP configuration
     http_port: 8080
     routes:
-      - path: /api
+      - path: /api/*
     
     # Health check
     health_check:
