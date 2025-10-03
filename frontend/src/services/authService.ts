@@ -4,6 +4,11 @@ import { User, UsageStats } from '@/types';
 // Google OAuth configuration
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 
+// Debug: Check if client ID is loaded (without exposing the value)
+if (!GOOGLE_CLIENT_ID) {
+  console.error('❌ VITE_GOOGLE_CLIENT_ID environment variable not found');
+}
+
 export interface GoogleCredentialResponse {
   credential: string;
   select_by: string;

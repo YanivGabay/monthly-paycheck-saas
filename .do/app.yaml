@@ -59,6 +59,9 @@ services:
     build_command: npm install && npm run build
     output_dir: dist
     
+    # Environment variables for build (set these in App Platform dashboard)
+    # VITE_GOOGLE_CLIENT_ID - Set in App Platform UI, not in code!
+    
     # Static site configuration
     static_sites:
       - name: frontend
