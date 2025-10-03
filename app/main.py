@@ -110,6 +110,8 @@ async def add_security_headers(request: Request, call_next):
 # Include API routes FIRST (higher priority)
 app.include_router(router)
 
+# Debug: Log all registered routes (will be combined with main startup event)
+
 # Railway debugging: Add a simple catch-all to see what's happening
 @app.middleware("http")
 async def debug_requests(request, call_next):
@@ -194,4 +196,12 @@ else:
 async def startup_event():
     logger.info("🚀 Monthly Paycheck SaaS v3.0 - AI Vision Started!")
     logger.info("📋 Features: OpenRouter + Gemini Vision for Hebrew name extraction")
-    logger.info("🔧 Clean architecture with separated routes and services") 
+    logger.info("🔧 Clean architecture with separated routes and services")
+    
+    # Debug: Log all registered routes
+    logger.info("🔍 Registered routes:")
+    for route in app.routes:
+        if hasattr(route, 'path') and hasattr(route, 'methods'):
+            logger.info(f"  {list(route.methods)} {route.path}")
+        elif hasattr(route, 'path'):
+            logger.info(f"  {route.path}") 
