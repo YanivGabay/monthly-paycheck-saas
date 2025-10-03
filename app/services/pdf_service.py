@@ -1,7 +1,7 @@
 import logging
 from typing import List
 from PIL import Image
-import PyPDF2
+from pypdf import PdfReader, PdfWriter
 from pdf2image import convert_from_path
 
 logger = logging.getLogger(__name__)
@@ -15,16 +15,16 @@ class PDFService:
     def get_total_pages(self, pdf_path: str) -> int:
         """Get total number of pages in a PDF"""
         with open(pdf_path, 'rb') as f:
-            reader = PyPDF2.PdfReader(f)
+            reader = PdfReader(f)
             return len(reader.pages)
 
     def extract_page(self, pdf_path: str, page_number: int, output_path: str):
         """Extract a single page from a PDF and save it"""
         with open(pdf_path, 'rb') as infile:
-            reader = PyPDF2.PdfReader(infile)
-            writer = PyPDF2.PdfWriter()
+            reader = PdfReader(infile)
+            writer = PdfWriter()
             
-            # Page numbers are 0-indexed in PyPDF2
+            # Page numbers are 0-indexed in pypdf
             writer.add_page(reader.pages[page_number - 1])
             
             with open(output_path, 'wb') as outfile:
