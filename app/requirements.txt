@@ -11,7 +11,7 @@ httpx==0.28.1
 fuzzywuzzy==0.18.0
 pypdf==5.1.0
 # pytesseract==0.3.13 # Not used - removed
-# python-Levenshtein==0.27.1 # Not used - fuzzywuzzy uses rapidfuzz backend
+Levenshtein==0.27.1 # Latest version (renamed from python-Levenshtein)
 
 # Authentication
 google-auth==2.37.0

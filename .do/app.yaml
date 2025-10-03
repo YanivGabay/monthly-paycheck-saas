@@ -62,7 +62,7 @@ services:
     # Static site configuration
     static_sites:
       - name: frontend
-        source_dir: dist
+        output_dir: dist
         index_document: index.html
         catchall_document: index.html  # For React Router SPA
         
