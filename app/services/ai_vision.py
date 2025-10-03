@@ -14,7 +14,7 @@ from fuzzywuzzy import process
 import random
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
-from ..config import CompanyTemplate, CropArea
+from config import CompanyTemplate, CropArea
 
 load_dotenv()
 

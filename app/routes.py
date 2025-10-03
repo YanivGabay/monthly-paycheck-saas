@@ -13,12 +13,12 @@ from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from pydantic import BaseModel, Field, validator
 from pdf2image import convert_from_path
 
-from .config import CompanyTemplate, CropArea, config_manager
+from config import CompanyTemplate, CropArea, config_manager
 from dataclasses import asdict
-from .services.ai_vision import AIVisionService
-from .services.pdf_service import PDFService
-from .services.email_service import EmailService
-from .services.auth_service import AuthService
+from services.ai_vision import AIVisionService
+from services.pdf_service import PDFService
+from services.email_service import EmailService
+from services.auth_service import AuthService
 
 # Initialize logger
 logger = logging.getLogger(__name__)
