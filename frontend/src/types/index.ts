@@ -46,6 +46,18 @@ export interface TestTemplateResponse {
   results: ProcessingResult[];
 }
 
+export interface SaveCropAreaResponse {
+  success: boolean;
+  message: string;
+  template: CompanyTemplate;
+}
+
+export interface UploadEmployeesResponse {
+  success: boolean;
+  message: string;
+  template: CompanyTemplate;
+}
+
 export type SetupStep = 'upload' | 'crop' | 'employees' | 'test' | 'complete';
 
 export interface PreviewResult {

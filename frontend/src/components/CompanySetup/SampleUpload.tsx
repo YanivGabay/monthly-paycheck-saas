@@ -16,7 +16,8 @@ export const SampleUpload: React.FC = () => {
     setPreviewUrl,
     setUploadedSampleId,
     setSetupStep,
-    setCurrentCompany
+    setCurrentCompany,
+    saveCompanyToStorage
   } = useAppStore();
 
   const handleUpload = async () => {
@@ -32,18 +33,25 @@ export const SampleUpload: React.FC = () => {
 
       const response = await setupApi.uploadSample(selectedFile, companyName.trim());
       
-      // Update store with response data
-      setPreviewUrl(response.preview_url);
-      setUploadedSampleId(response.company_id);
-      setCurrentCompany({
+      // Create initial company template
+      const initialTemplate = {
         company_id: response.company_id,
         company_name: companyName.trim(),
         name_crop_area: { x: 0, y: 0, width: 300, height: 80 }, // Default values
         employee_emails: {},
-        ocr_confidence_threshold: 80
-      });
+        ocr_confidence_threshold: 80,
+        created_at: new Date().toISOString()
+      };
       
-      setSuccessMessage('תלוש הדוגמה הועלה בהצלחה!');
+      // Update store with response data
+      setPreviewUrl(response.preview_url);
+      setUploadedSampleId(response.company_id);
+      setCurrentCompany(initialTemplate);
+      
+      // Save to localStorage (development will also save to server)
+      saveCompanyToStorage(initialTemplate);
+      
+      setSuccessMessage('תלוש הדוגמה הועלה בהצלחה ונשמר במחשב שלך!');
       
       // Move to next step
       setSetupStep('crop');

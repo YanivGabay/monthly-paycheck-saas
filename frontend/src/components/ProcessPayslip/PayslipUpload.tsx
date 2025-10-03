@@ -1,11 +1,13 @@
 import { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, Link } from 'react-router-dom';
 import { useAppStore } from '@/store';
 import { processingApi } from '@/services/api';
 import { authService } from '@/services/authService';
+import { CompanyConfigService } from '@/services/companyConfigService';
 import { FileUpload } from '@/components/common/FileUpload';
 import { Results } from './Results';
-import { RefreshCw } from 'lucide-react';
+import { CompanyTemplate } from '@/types';
+import { RefreshCw, AlertCircle } from 'lucide-react';
 
 export function PayslipUpload() {
   const { companyId } = useParams<{ companyId: string }>();
@@ -25,6 +27,7 @@ export function PayslipUpload() {
   } = useAppStore();
 
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [companyConfig, setCompanyConfig] = useState<CompanyTemplate | null>(null);
 
   // Validate company ID
   if (!companyId || companyId.length < 3 || /^[^a-zA-Z0-9_-]+$/.test(companyId)) {
@@ -49,13 +52,25 @@ export function PayslipUpload() {
   }
 
   useEffect(() => {
-    // Clear previous results when the component mounts or company changes
+    // Load company config and clear previous results when the component mounts or company changes
+    if (companyId) {
+      const config = CompanyConfigService.getConfig(companyId);
+      setCompanyConfig(config);
+      
+      if (!config) {
+        setError(`לא נמצאה הגדרה עבור החברה "${companyId}". אנא הגדר את החברה תחילה.`);
+      }
+    }
+    
     clearProcessing();
     setSelectedFile(null);
-  }, [companyId, clearProcessing]);
+  }, [companyId, clearProcessing, setError]);
 
   const handleFileSelect = async (file: File) => {
-    if (!companyId) return;
+    if (!companyId || !companyConfig) {
+      setError('חסרה הגדרת חברה. אנא הגדר את החברה תחילה.');
+      return;
+    }
 
     setSelectedFile(file);
     setLoading(true);
@@ -64,7 +79,7 @@ export function PayslipUpload() {
     clearProcessing();
 
     try {
-      const response = await processingApi.uploadAndPreview(file, companyId);
+      const response = await processingApi.uploadAndPreview(file, companyId, companyConfig);
       setProcessId(response.process_id);
       setPreviewResults(response.preview);
       
@@ -98,13 +113,16 @@ export function PayslipUpload() {
   };
 
   const handleSendEmails = async () => {
-    if (!companyId || !processId) return;
+    if (!companyId || !processId || !companyConfig) {
+      setError('חסרים נתונים לשליחת מיילים');
+      return;
+    }
 
     setLoading(true);
     setError(null);
 
     try {
-      const response = await processingApi.sendEmails(processId, companyId);
+      const response = await processingApi.sendEmails(processId, companyId, companyConfig);
       setEmailSendResults(response.email_results);
       
       // Refresh usage stats after successful email sending
@@ -133,6 +151,41 @@ export function PayslipUpload() {
     clearProcessing();
   };
 
+  // Show company config error if no config found
+  if (!companyConfig) {
+    return (
+      <div className="max-w-4xl mx-auto">
+        <div className="bg-red-50 border border-red-200 rounded-lg p-6">
+          <div className="flex items-center">
+            <AlertCircle className="h-8 w-8 text-red-600 ml-4" />
+            <div>
+              <h2 className="text-xl font-bold text-red-800 mb-2">
+                לא נמצאה הגדרת חברה
+              </h2>
+              <p className="text-red-600 mb-4">
+                לא נמצאה הגדרה עבור החברה "{companyId}". יש להגדיר את החברה תחילה.
+              </p>
+              <div className="flex gap-3">
+                <Link
+                  to="/setup"
+                  className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 flex items-center"
+                >
+                  הגדר חברה חדשה
+                </Link>
+                <Link
+                  to="/"
+                  className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 flex items-center"
+                >
+                  חזור לדף הבית
+                </Link>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -140,7 +193,13 @@ export function PayslipUpload() {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold text-gray-900">עיבוד תלושי שכר</h1>
-            <p className="text-gray-600 mt-2">חברה: <span className="font-medium">{companyId}</span></p>
+            <p className="text-gray-600 mt-2">
+              חברה: <span className="font-medium">{companyConfig.company_name}</span>
+              <span className="text-sm text-gray-500 mr-2">({companyId})</span>
+            </p>
+            <p className="text-sm text-green-600 mt-1">
+              ✅ {Object.keys(companyConfig.employee_emails).length} עובדים רשומים
+            </p>
           </div>
           
           {(processId || emailSendResults.length > 0) && (

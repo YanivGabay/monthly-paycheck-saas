@@ -14,6 +14,7 @@ from pydantic import BaseModel, Field, validator
 from pdf2image import convert_from_path
 
 from .config import CompanyTemplate, CropArea, config_manager
+from dataclasses import asdict
 from .services.ai_vision import AIVisionService
 from .services.pdf_service import PDFService
 from .services.email_service import EmailService
@@ -220,32 +221,44 @@ async def get_setup_companies():
 
 @router.post("/api/setup/upload-sample")
 async def upload_sample(file: UploadFile = Depends(validate_file_size), company_id: str = Form(...)):
-    """Upload sample payslip for company setup"""
+    """Upload sample payslip for company setup - no persistent storage"""
     
     if not file.filename.lower().endswith('.pdf'):
         raise HTTPException(status_code=400, detail="Please upload a PDF file")
     
-    # Save uploaded file
-    sample_path = os.path.join(SAMPLES_DIR, f"{company_id}_sample.pdf")
-    with open(sample_path, "wb") as buffer:
-        content = await file.read()
-        buffer.write(content)
-    
-    # Convert first page to image for preview
+    # Process PDF in memory - no file saving for security
     try:
-        images = convert_from_path(sample_path, dpi=300, first_page=1, last_page=1)
+        # Read file content
+        content = await file.read()
+        
+        # Save to temporary file only for processing
+        import tempfile
+        with tempfile.NamedTemporaryFile(suffix='.pdf', delete=False) as temp_pdf:
+            temp_pdf.write(content)
+            temp_pdf_path = temp_pdf.name
+        
+        # Convert first page to image for preview
+        images = convert_from_path(temp_pdf_path, dpi=300, first_page=1, last_page=1)
         preview_image = images[0]
+        
+        # Save preview image temporarily
         preview_path = os.path.join(PREVIEW_DIR, f"{company_id}_preview.png")
         preview_image.save(preview_path)
         
+        # Delete the temporary PDF immediately
+        os.unlink(temp_pdf_path)
+        
         return JSONResponse({
             "success": True,
-            "message": "Sample uploaded successfully",
+            "message": "Sample processed successfully (not stored for security)",
             "preview_url": f"/api/preview/{company_id}_preview.png",
             "company_id": company_id
         })
         
     except Exception as e:
+        # Clean up temporary file if it exists
+        if 'temp_pdf_path' in locals() and os.path.exists(temp_pdf_path):
+            os.unlink(temp_pdf_path)
         raise HTTPException(status_code=500, detail=f"Error processing PDF: {str(e)}")
 
 @router.get("/api/preview/{filename}")
@@ -258,7 +271,7 @@ async def get_preview(filename: str):
 
 @router.post("/api/setup/save-crop-area")
 async def save_crop_area(request: Request):
-    """Save crop area for company template"""
+    """Save crop area for company template - returns config for frontend storage"""
     data = await request.json()
     
     company_id = data.get("company_id")
@@ -285,19 +298,30 @@ async def save_crop_area(request: Request):
         created_at=datetime.now().isoformat()
     )
     
-    if config_manager.save_template(template):
-        return JSONResponse({"success": True, "message": "Crop area saved successfully"})
-    else:
-        raise HTTPException(status_code=500, detail="Failed to save crop area")
+    # Save to server only in development mode
+    config_manager.save_template(template)
+    
+    # Return template data for frontend to store in localStorage
+    return JSONResponse({
+        "success": True, 
+        "message": "Crop area configured successfully",
+        "template": asdict(template)  # Frontend will store this
+    })
 
 @router.post("/api/setup/upload-employees")
-async def upload_employees(request: Request, file: UploadFile = File(...), company_id: str = Form(...)):
-    """Upload employee list CSV"""
+async def upload_employees(
+    file: UploadFile = File(...), 
+    company_config: str = Form(...)  # Existing company config from frontend
+):
+    """Upload employee list CSV - returns updated config for frontend storage"""
     
     if not file.filename.lower().endswith('.csv'):
         raise HTTPException(status_code=400, detail="Please upload a CSV file")
     
     try:
+        # Parse existing company config from frontend
+        config_data = json.loads(company_config)
+        
         # Read CSV content
         content = await file.read()
         csv_content = content.decode('utf-8')
@@ -315,72 +339,115 @@ async def upload_employees(request: Request, file: UploadFile = File(...), compa
                     if name and email:
                         employee_emails[name] = email
         
-        # Update existing template
-        template = config_manager.load_template()
-        if not template:
-            raise HTTPException(status_code=404, detail="Company template not found")
+        # Update config with employee emails
+        config_data['employee_emails'] = employee_emails
+        config_data['updated_at'] = datetime.now().isoformat()
         
-        template.employee_emails = employee_emails
+        # Save to server only in development mode
+        if os.getenv("ENVIRONMENT", "development") == "development":
+            crop_area = CropArea(**config_data['name_crop_area'])
+            template = CompanyTemplate(
+                company_id=config_data['company_id'],
+                company_name=config_data['company_name'],
+                name_crop_area=crop_area,
+                employee_emails=employee_emails,
+                ocr_confidence_threshold=config_data.get('ocr_confidence_threshold', 80.0),
+                created_at=config_data.get('created_at'),
+                updated_at=config_data['updated_at']
+            )
+            config_manager.save_template(template)
         
-        if config_manager.save_template(template):
-            return JSONResponse({
-                "success": True,
-                "message": f"Uploaded {len(employee_emails)} employees successfully"
-            })
-        else:
-            raise HTTPException(status_code=500, detail="Failed to save employee list")
+        return JSONResponse({
+            "success": True,
+            "message": f"Uploaded {len(employee_emails)} employees successfully",
+            "template": config_data  # Return updated config for frontend storage
+        })
             
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error processing CSV: {str(e)}")
 
 @router.post("/api/setup/test-template")
-async def test_template(request: Request, company_id: str = Form(...)):
-    """Test the template with sample PDF"""
-    
-    template = config_manager.load_template()
-    if not template:
-        raise HTTPException(status_code=404, detail="Company template not found")
-    
-    sample_path = os.path.join(SAMPLES_DIR, f"{company_id}_sample.pdf")
-    if not os.path.exists(sample_path):
-        raise HTTPException(status_code=404, detail="Sample PDF not found")
+async def test_template(
+    file: UploadFile = Depends(validate_file_size),
+    company_config: str = Form(...)  # Company config from frontend
+):
+    """Test the template with uploaded sample PDF - no persistent storage"""
     
     try:
+        # Parse company config from frontend
+        config_data = json.loads(company_config)
+        crop_area = CropArea(**config_data['name_crop_area'])
+        template = CompanyTemplate(
+            company_id=config_data['company_id'],
+            company_name=config_data['company_name'],
+            name_crop_area=crop_area,
+            employee_emails=config_data['employee_emails'],
+            ocr_confidence_threshold=config_data.get('ocr_confidence_threshold', 80.0)
+        )
+        
+        # Process PDF in memory - no file saving
+        content = await file.read()
+        
+        # Save to temporary file only for processing
+        import tempfile
+        with tempfile.NamedTemporaryFile(suffix='.pdf', delete=False) as temp_pdf:
+            temp_pdf.write(content)
+            temp_pdf_path = temp_pdf.name
+        
         # Process with AI vision
-        results = await ai_vision.process_payslip_pdf(sample_path, template)
+        results = await ai_vision.process_payslip_pdf(temp_pdf_path, template)
+        
+        # Delete the temporary PDF immediately
+        os.unlink(temp_pdf_path)
         
         return JSONResponse({
             "success": True,
-            "message": "Template test completed",
+            "message": "Template test completed (PDF not stored for security)",
             "results": results
         })
         
     except Exception as e:
+        # Clean up temporary file if it exists
+        if 'temp_pdf_path' in locals() and os.path.exists(temp_pdf_path):
+            os.unlink(temp_pdf_path)
         raise HTTPException(status_code=500, detail=f"Error testing template: {str(e)}")
 
 @router.get("/api/companies/{company_id}")
 async def get_company(company_id: str):
-    """Get company by ID - API endpoint (backward compatible)"""
+    """Get company by ID - returns empty in production (frontend manages config)"""
+    # In production, frontend manages company config via localStorage
+    # This endpoint is kept for development compatibility
     template = config_manager.load_template()
-    if not template:
-        raise HTTPException(status_code=404, detail="Company not found")
-    
-    return {"company": template}
+    if template:
+        return {"company": template}
+    else:
+        return {"company": None, "message": "Company config managed by frontend"}
 
 @router.post("/api/process/{company_id}/preview")
 async def process_payslip_preview(
     company_id: str, 
     file: UploadFile = Depends(validate_file_size),
-    user_info: Dict = Depends(check_rate_limit_dependency("ai_calls"))
+    user_info: Dict = Depends(check_rate_limit_dependency("ai_calls")),
+    company_config: str = Form(...)  # Company config as JSON string from frontend
 ):
     """Step 1: Analyzes the payslip PDF and returns a preview of matches."""
     logger.info(f"[{company_id}] - PREVIEW_START: Received request for file {file.filename}")
     
-    template = config_manager.load_template()
-    if not template:
-        logger.error(f"[{company_id}] - PREVIEW_FAIL: Company not found.")
-        raise HTTPException(status_code=404, detail="Company not found")
-    logger.info(f"[{company_id}] - PREVIEW_LOG: Company template loaded.")
+    # Parse company config from frontend
+    try:
+        config_data = json.loads(company_config)
+        crop_area = CropArea(**config_data['name_crop_area'])
+        template = CompanyTemplate(
+            company_id=config_data['company_id'],
+            company_name=config_data['company_name'],
+            name_crop_area=crop_area,
+            employee_emails=config_data['employee_emails'],
+            ocr_confidence_threshold=config_data.get('ocr_confidence_threshold', 80.0)
+        )
+        logger.info(f"[{company_id}] - PREVIEW_LOG: Company template parsed from frontend.")
+    except Exception as e:
+        logger.error(f"[{company_id}] - PREVIEW_FAIL: Invalid company config: {e}")
+        raise HTTPException(status_code=400, detail="Invalid company configuration")
 
     if not file.filename.lower().endswith('.pdf'):
         logger.error(f"[{company_id}] - PREVIEW_FAIL: Invalid file type {file.filename}")
@@ -441,13 +508,26 @@ async def process_payslip_send(
     """Step 2: Sends emails based on a completed preview process."""
     data = await request.json()
     process_id = data.get("process_id")
+    company_config = data.get("company_config")
 
     if not process_id:
         raise HTTPException(status_code=400, detail="process_id is required")
+    
+    if not company_config:
+        raise HTTPException(status_code=400, detail="company_config is required")
 
-    template = config_manager.load_template()
-    if not template:
-        raise HTTPException(status_code=404, detail="Company not found")
+    # Parse company config from frontend
+    try:
+        crop_area = CropArea(**company_config['name_crop_area'])
+        template = CompanyTemplate(
+            company_id=company_config['company_id'],
+            company_name=company_config['company_name'],
+            name_crop_area=crop_area,
+            employee_emails=company_config['employee_emails'],
+            ocr_confidence_threshold=company_config.get('ocr_confidence_threshold', 80.0)
+        )
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Invalid company configuration: {e}")
 
     pdf_path = os.path.join(PROCESSING_DIR, f"{process_id}.pdf")
     results_path = os.path.join(PROCESSING_DIR, f"{process_id}.json")
@@ -507,7 +587,4 @@ async def process_payslip_send(
         if os.path.exists(results_path):
             os.remove(results_path)
 
-@router.get("/api/health")
-async def health_check():
-    """Health check endpoint"""
-    return {"status": "healthy"} 
+# Duplicate health endpoint removed - using the one at line 51 

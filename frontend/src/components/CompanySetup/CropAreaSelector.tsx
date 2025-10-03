@@ -19,7 +19,8 @@ export const CropAreaSelector: React.FC = () => {
     setError,
     setSuccessMessage,
     setSetupStep,
-    updateCompany
+    updateCompany,
+    saveCompanyToStorage
   } = useAppStore();
 
   useEffect(() => {
@@ -138,18 +139,23 @@ export const CropAreaSelector: React.FC = () => {
       setLoading(true);
       setError(null);
 
-      await setupApi.saveCropArea(
+      const response = await setupApi.saveCropArea(
         currentCompany.company_id,
         currentCompany.company_name,
         cropArea
       );
 
-      // Update company in store
-      updateCompany(currentCompany.company_id, {
-        name_crop_area: cropArea
-      });
+      // Save the returned template to localStorage
+      if (response.template) {
+        saveCompanyToStorage(response.template);
+        
+        // Update company in store
+        updateCompany(currentCompany.company_id, {
+          name_crop_area: cropArea
+        });
+      }
 
-      setSuccessMessage('אזור השם נשמר בהצלחה!');
+      setSuccessMessage('אזור השם נשמר בהצלחה במחשב שלך!');
       setSetupStep('employees');
 
     } catch (error: any) {

@@ -3,11 +3,13 @@ import { ArrowLeft, Play, CheckCircle, XCircle, User, Mail, Eye, Zap } from 'luc
 import { useAppStore } from '@/store';
 import { setupApi } from '@/services/api';
 import { ProcessingResult } from '@/types';
+import { FileUpload } from '@/components/common/FileUpload';
 
 export const TestTemplate: React.FC = () => {
   const [testResults, setTestResults] = useState<ProcessingResult[]>([]);
   const [isTesting, setIsTesting] = useState(false);
   const [hasRun, setHasRun] = useState(false);
+  const [testFile, setTestFile] = useState<File | null>(null);
 
   const {
     currentCompany,
@@ -15,7 +17,8 @@ export const TestTemplate: React.FC = () => {
     setError,
     setSuccessMessage,
     setSetupStep,
-    addCompany
+    addCompany,
+    saveCompanyToStorage
   } = useAppStore();
 
   const runTest = async () => {
@@ -24,16 +27,27 @@ export const TestTemplate: React.FC = () => {
       return;
     }
 
+    if (!testFile) {
+      setError('נא לבחור קובץ PDF לבדיקה');
+      return;
+    }
+
     try {
       setIsTesting(true);
       setLoading(true);
       setError(null);
 
-      const response = await setupApi.testTemplate(currentCompany.company_id);
+      const response = await setupApi.testTemplate(testFile, currentCompany);
       
       setTestResults(response.results);
       setHasRun(true);
-      setSuccessMessage('בדיקת התבנית הושלמה בהצלחה!');
+      
+      const successCount = response.results.filter(r => r.matched_employee).length;
+      if (successCount > 0) {
+        setSuccessMessage(`בדיקה הושלמה! נמצאו ${successCount} התאמות.`);
+      } else {
+        setError('לא נמצאו התאמות. בדוק את הגדרות החברה.');
+      }
 
     } catch (error: any) {
       console.error('Test template error:', error);
@@ -46,8 +60,13 @@ export const TestTemplate: React.FC = () => {
 
   const completeSetup = () => {
     if (currentCompany) {
-      // Add company to the global list
+      // Ensure company is saved to localStorage
+      saveCompanyToStorage(currentCompany);
+      
+      // Add company to the global list in store
       addCompany(currentCompany);
+      
+      setSuccessMessage('הגדרת החברה הושלמה בהצלחה ונשמרה במחשב שלך!');
     }
     setSetupStep('complete');
   };
@@ -95,8 +114,23 @@ export const TestTemplate: React.FC = () => {
         </div>
       </div>
 
-      {/* Test Button */}
+      {/* File Upload for Testing */}
       {!hasRun && (
+        <div className="bg-white border border-gray-200 rounded-lg p-6">
+          <h4 className="font-semibold text-gray-900 mb-4">העלה קובץ PDF לבדיקה</h4>
+          <FileUpload
+            label="בחר קובץ PDF לבדיקת התבנית"
+            accept=".pdf"
+            onFileSelect={setTestFile}
+            selectedFile={testFile}
+            onRemove={() => setTestFile(null)}
+            helpText="העלה קובץ PDF דוגמה לבדיקת התבנית"
+          />
+        </div>
+      )}
+
+      {/* Test Button */}
+      {!hasRun && testFile && (
         <div className="text-center py-8">
           <button
             onClick={runTest}

@@ -3,6 +3,8 @@ import {
   CompanyTemplate,
   UploadSampleResponse,
   TestTemplateResponse,
+  SaveCropAreaResponse,
+  UploadEmployeesResponse,
   CropArea,
   PreviewResult,
   EmailSendResult,
@@ -89,12 +91,12 @@ export const setupApi = {
     return response.data;
   },
 
-  // Save crop area
+  // Save crop area - returns template for localStorage
   async saveCropArea(
     companyId: string,
     companyName: string,
     cropArea: CropArea
-  ): Promise<{ success: boolean; message: string }> {
+  ): Promise<SaveCropAreaResponse> {
     const response = await api.post('/setup/save-crop-area', {
       company_id: companyId,
       company_name: companyName,
@@ -104,14 +106,14 @@ export const setupApi = {
     return response.data;
   },
 
-  // Upload employees CSV
+  // Upload employees CSV - requires existing company config
   async uploadEmployees(
     file: File,
-    companyId: string
-  ): Promise<{ success: boolean; message: string }> {
+    companyConfig: CompanyTemplate
+  ): Promise<UploadEmployeesResponse> {
     const formData = new FormData();
     formData.append('file', file);
-    formData.append('company_id', companyId);
+    formData.append('company_config', JSON.stringify(companyConfig));
 
     const response = await api.post('/setup/upload-employees', formData, {
       headers: {
@@ -122,10 +124,14 @@ export const setupApi = {
     return response.data;
   },
 
-  // Test template
-  async testTemplate(companyId: string): Promise<TestTemplateResponse> {
+  // Test template - requires file upload and company config
+  async testTemplate(
+    file: File, 
+    companyConfig: CompanyTemplate
+  ): Promise<TestTemplateResponse> {
     const formData = new FormData();
-    formData.append('company_id', companyId);
+    formData.append('file', file);
+    formData.append('company_config', JSON.stringify(companyConfig));
 
     const response = await api.post('/setup/test-template', formData, {
       headers: {
@@ -139,13 +145,15 @@ export const setupApi = {
 
 // Processing API
 export const processingApi = {
-  // Step 1: Upload and get a preview
+  // Step 1: Upload and get a preview - requires company config
   async uploadAndPreview(
     file: File,
-    companyId: string
+    companyId: string,
+    companyConfig: CompanyTemplate
   ): Promise<{ process_id: string; preview: PreviewResult[] }> {
     const formData = new FormData();
     formData.append('file', file);
+    formData.append('company_config', JSON.stringify(companyConfig));
 
     const response = await api.post(`/process/${companyId}/preview`, formData, {
       headers: {
@@ -156,13 +164,15 @@ export const processingApi = {
     return response.data;
   },
 
-  // Step 2: Send emails based on the preview
+  // Step 2: Send emails based on the preview - requires company config
   async sendEmails(
     processId: string,
-    companyId: string
+    companyId: string,
+    companyConfig: CompanyTemplate
   ): Promise<{ email_results: EmailSendResult[] }> {
     const response = await api.post(`/process/${companyId}/send`, {
       process_id: processId,
+      company_config: companyConfig,
     });
     return response.data;
   },

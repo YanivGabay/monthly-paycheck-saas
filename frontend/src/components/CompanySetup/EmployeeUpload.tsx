@@ -22,7 +22,8 @@ export const EmployeeUpload: React.FC = () => {
     setError,
     setSuccessMessage,
     setSetupStep,
-    updateCompany
+    updateCompany,
+    saveCompanyToStorage
   } = useAppStore();
 
   const parseCSV = async (file: File): Promise<void> => {
@@ -98,19 +99,25 @@ export const EmployeeUpload: React.FC = () => {
       setLoading(true);
       setError(null);
 
-      const response = await setupApi.uploadEmployees(selectedFile, currentCompany.company_id);
+      // Pass current company config to API
+      const response = await setupApi.uploadEmployees(selectedFile, currentCompany);
       
-      // Update company in store with employee data
-      const employeeEmails = parsedEmployees.reduce((acc, emp) => {
-        acc[emp.name] = emp.email;
-        return acc;
-      }, {} as Record<string, string>);
+      // Save the returned updated template to localStorage
+      if (response.template) {
+        saveCompanyToStorage(response.template);
+        
+        // Update company in store with employee data
+        const employeeEmails = parsedEmployees.reduce((acc, emp) => {
+          acc[emp.name] = emp.email;
+          return acc;
+        }, {} as Record<string, string>);
 
-      updateCompany(currentCompany.company_id, {
-        employee_emails: employeeEmails
-      });
+        updateCompany(currentCompany.company_id, {
+          employee_emails: employeeEmails
+        });
+      }
 
-      setSuccessMessage(response.message);
+      setSuccessMessage(`${response.message} (נשמר במחשב שלך)`);
       setSetupStep('test');
 
     } catch (error: any) {

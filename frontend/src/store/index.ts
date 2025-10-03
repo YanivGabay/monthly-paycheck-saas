@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { AppState, CompanyTemplate, SetupStep, PreviewResult, EmailSendResult, User, UsageStats } from '@/types';
 import { authService } from '@/services/authService';
+import { CompanyConfigService } from '@/services/companyConfigService';
 
 interface AppActions {
   // Auth
@@ -12,11 +13,15 @@ interface AppActions {
   setAuthLoading: (loading: boolean) => void;
   setUsageStats: (usage: UsageStats | null) => void;
   
-  // Companies
+  // Companies (localStorage integration)
+  loadCompaniesFromStorage: () => void;
   setCompanies: (companies: CompanyTemplate[]) => void;
   setCurrentCompany: (company: CompanyTemplate | null) => void;
   addCompany: (company: CompanyTemplate) => void;
   updateCompany: (companyId: string, updates: Partial<CompanyTemplate>) => void;
+  deleteCompany: (companyId: string) => void;
+  saveCompanyToStorage: (company: CompanyTemplate) => void;
+  getCompanyFromStorage: (companyId: string) => CompanyTemplate | null;
   
   // Setup flow
   setSetupStep: (step: SetupStep) => void;
@@ -63,25 +68,71 @@ export const useAppStore = create<AppState & AppActions>((set, _get) => ({
   emailSendResults: [],
   processingResults: [], // This might be deprecated
 
-  // Company actions
+  // Company actions with localStorage integration
+  loadCompaniesFromStorage: () => {
+    try {
+      const companies = CompanyConfigService.getCompanyList();
+      set({ companies });
+    } catch (error) {
+      console.error('Failed to load companies from storage:', error);
+      set({ companies: [] });
+    }
+  },
+
   setCompanies: (companies) => set({ companies }),
   
   setCurrentCompany: (company) => set({ currentCompany: company }),
   
-  addCompany: (company) => set((state) => ({
-    companies: [...state.companies, company]
-  })),
+  addCompany: (company) => {
+    // Save to localStorage first
+    CompanyConfigService.saveConfig(company);
+    // Then update store
+    set((state) => ({
+      companies: [...state.companies, company]
+    }));
+  },
   
-  updateCompany: (companyId, updates) => set((state) => ({
-    companies: state.companies.map(company =>
-      company.company_id === companyId
-        ? { ...company, ...updates }
-        : company
-    ),
-    currentCompany: state.currentCompany?.company_id === companyId
-      ? { ...state.currentCompany, ...updates }
-      : state.currentCompany
-  })),
+  updateCompany: (companyId, updates) => {
+    set((state) => {
+      const updatedCompany = state.companies.find(c => c.company_id === companyId);
+      if (updatedCompany) {
+        const newCompany = { ...updatedCompany, ...updates };
+        // Save to localStorage
+        CompanyConfigService.saveConfig(newCompany);
+        
+        return {
+          companies: state.companies.map(company =>
+            company.company_id === companyId ? newCompany : company
+          ),
+          currentCompany: state.currentCompany?.company_id === companyId
+            ? newCompany
+            : state.currentCompany
+        };
+      }
+      return state;
+    });
+  },
+
+  deleteCompany: (companyId) => {
+    CompanyConfigService.deleteConfig(companyId);
+    set((state) => ({
+      companies: state.companies.filter(c => c.company_id !== companyId),
+      currentCompany: state.currentCompany?.company_id === companyId 
+        ? null 
+        : state.currentCompany
+    }));
+  },
+
+  saveCompanyToStorage: (company) => {
+    CompanyConfigService.saveConfig(company);
+    // Reload companies to ensure sync
+    const companies = CompanyConfigService.getCompanyList();
+    set({ companies });
+  },
+
+  getCompanyFromStorage: (companyId) => {
+    return CompanyConfigService.getConfig(companyId);
+  },
 
   // Setup flow actions
   setSetupStep: (step) => set({ setupStep: step }),

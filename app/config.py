@@ -24,22 +24,33 @@ class CompanyTemplate:
     updated_at: Optional[str] = None
 
 class ConfigManager:
-    """Manages the single company configuration"""
+    """Manages company configuration - no persistent storage for security"""
     
     def __init__(self, config_dir: str = "company_configs"):
-        self.config_dir = Path(config_dir)
-        self.config_dir.mkdir(exist_ok=True)
-        self.config_file = self.config_dir / "config.json"
+        # Only create directory in development mode
+        self.is_dev = os.getenv("ENVIRONMENT", "development") == "development"
+        if self.is_dev:
+            self.config_dir = Path(config_dir)
+            self.config_dir.mkdir(exist_ok=True)
+            self.config_file = self.config_dir / "config.json"
+        else:
+            # Production: No persistent file storage
+            self.config_dir = None
+            self.config_file = None
 
     def save_template(self, template: CompanyTemplate) -> bool:
-        """Save company template to the single JSON file"""
+        """Save company template - only in development mode"""
+        if not self.is_dev:
+            print(f"🔒 Production mode: Company config not saved to server (security)")
+            return True  # Return success - frontend handles storage
+            
         try:
             template_dict = asdict(template)
             
             with open(self.config_file, 'w', encoding='utf-8') as f:
                 json.dump(template_dict, f, indent=2, ensure_ascii=False)
             
-            print(f"✅ Saved template for {template.company_name}")
+            print(f"✅ [DEV] Saved template for {template.company_name}")
             return True
             
         except Exception as e:
@@ -47,7 +58,11 @@ class ConfigManager:
             return False
     
     def load_template(self) -> Optional[CompanyTemplate]:
-        """Load company template from the single JSON file"""
+        """Load company template - only in development mode"""
+        if not self.is_dev:
+            print(f"🔒 Production mode: No server-side config storage")
+            return None  # Frontend must provide config
+            
         try:
             if not self.config_file.exists():
                 return None
@@ -57,7 +72,7 @@ class ConfigManager:
             
             crop_area = CropArea(**data['name_crop_area'])
             template = CompanyTemplate(
-                company_id=data.get('company_id', 'main'),  # Keep for backward compatibility
+                company_id=data.get('company_id', 'main'),
                 company_name=data['company_name'],
                 name_crop_area=crop_area,
                 employee_emails=data['employee_emails'],

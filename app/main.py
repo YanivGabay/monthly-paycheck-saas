@@ -60,11 +60,22 @@ if DEBUG:
         "http://localhost:3000", "http://127.0.0.1:3000", "http://localhost:8000"
     ]
 else:
-    # Hardcoding for debugging Railway env var issue.
-    # This bypasses the problematic PRODUCTION_DOMAIN variable.
-    cors_origins = [
-        "https://monthly-paycheck-saas-production.up.railway.app"
-    ]
+    # Production CORS origins for DigitalOcean App Platform
+    cors_origins = []
+    
+    # Add production domain if set
+    if PRODUCTION_DOMAIN:
+        cors_origins.extend([
+            f"https://{PRODUCTION_DOMAIN}",
+            f"https://www.{PRODUCTION_DOMAIN}"
+        ])
+    
+    # Add DigitalOcean App Platform default domains
+    app_name = os.getenv("APP_NAME", "monthly-paycheck-saas")
+    cors_origins.extend([
+        f"https://{app_name}.ondigitalocean.app",
+        f"https://www.{app_name}.ondigitalocean.app"
+    ])
 
 logger.info(f"🌐 CORS Origins (Hardcoded for Debug): {cors_origins}")
 logger.info(f"🔧 DEBUG mode: {DEBUG}")

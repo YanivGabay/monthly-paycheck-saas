@@ -10,12 +10,13 @@ import { PayslipUpload } from '@/components/ProcessPayslip/PayslipUpload';
 import { useAppStore } from '@/store';
 
 function App() {
-  const { error, successMessage, clearMessages, initializeAuth } = useAppStore();
+  const { error, successMessage, clearMessages, initializeAuth, loadCompaniesFromStorage } = useAppStore();
 
-  // Initialize authentication on app startup
+  // Initialize authentication and load companies on app startup
   useEffect(() => {
     initializeAuth();
-  }, [initializeAuth]);
+    loadCompaniesFromStorage();
+  }, [initializeAuth, loadCompaniesFromStorage]);
 
   return (
     <ErrorBoundary>

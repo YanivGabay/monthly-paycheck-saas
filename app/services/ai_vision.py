@@ -147,7 +147,12 @@ class AIVisionService:
         return False, "No match found", ""
     
     def _save_debug_image(self, image: Image.Image, company_id: str, page_num: int):
-        """Save debug image for inspection"""
+        """Save debug image for inspection (development only)"""
+        # Only save debug images in development mode
+        if not self.is_dev:
+            logger.info(f"🔧 Production mode: Skipping debug image save for page {page_num}")
+            return None
+            
         try:
             debug_dir = "debug"
             # Ensure the directory exists
@@ -162,9 +167,11 @@ class AIVisionService:
             image.save(image_path)
             
             logger.info(f"💾 Saved debug image: {image_path}")
+            return image_path
             
         except Exception as e:
             logger.error(f"❌ Error saving debug image: {e}")
+            return None
     
     def _extract_name_with_ai(self, image: Image.Image) -> str:
         """Extract Hebrew name from image using AI Vision (sync version)"""

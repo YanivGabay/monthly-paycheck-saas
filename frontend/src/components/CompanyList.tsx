@@ -1,38 +1,75 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { companyApi } from '@/services/api';
 import { CompanyTemplate } from '@/types';
 import { useAppStore } from '@/store';
-import { Building2, FileText, Users, Settings, ArrowLeft, Trash2, CheckCircle } from 'lucide-react';
+import { CompanyConfigService } from '@/services/companyConfigService';
+import { Building2, FileText, Users, Settings, ArrowLeft, Trash2, CheckCircle, Download, Upload } from 'lucide-react';
 
 export const CompanyList: React.FC = () => {
   const [companies, setCompanies] = useState<CompanyTemplate[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const { setError, auth } = useAppStore();
+  const { setError, setSuccessMessage, auth } = useAppStore();
 
-  const loadCompanies = async () => {
+  const loadCompanies = () => {
     try {
       setIsLoading(true);
-      const response = await companyApi.getCompanies();
-      setCompanies(response || []);
+      const loadedCompanies = CompanyConfigService.getCompanyList();
+      setCompanies(loadedCompanies);
     } catch (error: any) {
       console.error('Error loading companies:', error);
-      setError('Failed to load companies');
+      setError('Failed to load companies from storage');
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleDeleteAll = async () => {
+  const handleDeleteAll = () => {
     if (window.confirm('האם אתה בטוח שברצונך למחוק את כל ההגדרות ולהתחיל מחדש?')) {
       try {
-        // Delete the single config file
-        await fetch('/api/company', { method: 'DELETE' });
+        CompanyConfigService.clearAllConfigs();
         setCompanies([]);
+        setSuccessMessage('כל ההגדרות נמחקו בהצלחה');
       } catch (error: any) {
-        setError('Failed to delete configuration');
+        setError('Failed to delete configurations');
       }
     }
+  };
+
+  const handleDeleteCompany = (companyId: string, companyName: string) => {
+    if (window.confirm(`האם אתה בטוח שברצונך למחוק את החברה "${companyName}"?`)) {
+      try {
+        CompanyConfigService.deleteConfig(companyId);
+        setCompanies(companies.filter(c => c.company_id !== companyId));
+        setSuccessMessage(`החברה "${companyName}" נמחקה בהצלחה`);
+      } catch (error: any) {
+        setError('Failed to delete company');
+      }
+    }
+  };
+
+  const handleExportConfigs = () => {
+    try {
+      CompanyConfigService.exportConfigs();
+      setSuccessMessage('הגדרות החברות יוצאו בהצלחה');
+    } catch (error: any) {
+      setError('Failed to export configurations');
+    }
+  };
+
+  const handleImportConfigs = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    try {
+      const importedCount = await CompanyConfigService.importConfigs(file);
+      loadCompanies(); // Reload companies after import
+      setSuccessMessage(`${importedCount} הגדרות חברות יובאו בהצלחה`);
+    } catch (error: any) {
+      setError('Failed to import configurations');
+    }
+    
+    // Reset file input
+    event.target.value = '';
   };
 
   useEffect(() => {
@@ -135,7 +172,7 @@ export const CompanyList: React.FC = () => {
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">החברות שלי</h1>
-          <p className="text-gray-600 mt-2">נהל את הגדרות עיבוד תלושי השכר</p>
+          <p className="text-gray-600 mt-2">נהל את הגדרות עיבוד תלושי השכר (נשמר במחשב שלך)</p>
         </div>
         <div className="flex gap-3">
           <Link
@@ -145,14 +182,36 @@ export const CompanyList: React.FC = () => {
             <Settings className="h-4 w-4 ml-2" />
             הוסף חברה חדשה
           </Link>
+          
           {companies.length > 0 && (
-            <button
-              onClick={handleDeleteAll}
-              className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 flex items-center"
-            >
-              <Trash2 className="h-4 w-4 ml-2" />
-              מחק הכל והתחל מחדש
-            </button>
+            <>
+              <button
+                onClick={handleExportConfigs}
+                className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center"
+              >
+                <Download className="h-4 w-4 ml-2" />
+                יצא הגדרות
+              </button>
+              
+              <label className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center cursor-pointer">
+                <Upload className="h-4 w-4 ml-2" />
+                יבא הגדרות
+                <input
+                  type="file"
+                  accept=".json"
+                  onChange={handleImportConfigs}
+                  className="hidden"
+                />
+              </label>
+              
+              <button
+                onClick={handleDeleteAll}
+                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 flex items-center"
+              >
+                <Trash2 className="h-4 w-4 ml-2" />
+                מחק הכל
+              </button>
+            </>
           )}
         </div>
       </div>
@@ -184,6 +243,13 @@ export const CompanyList: React.FC = () => {
                   <FileText className="h-4 w-4 ml-2" />
                   עבד תלושים
                 </Link>
+                <button
+                  onClick={() => handleDeleteCompany(company.company_id, company.company_name)}
+                  className="px-3 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 flex items-center text-sm"
+                  title="מחק חברה"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </button>
               </div>
             </div>
 
