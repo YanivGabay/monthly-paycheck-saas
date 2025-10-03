@@ -19,7 +19,7 @@ services:
     run_command: gunicorn -c app/gunicorn.conf.py app.main:app
     
     # HTTP configuration
-    http_port: 8000
+    http_port: 8080
     routes:
       - path: /api
     
